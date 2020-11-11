@@ -1,0 +1,458 @@
+openapi: 3.0.1
+info:
+  title: Vocal
+  description: This is a creative-hosted community platform.
+  termsOfService: http://swagger.io/terms/
+  contact:
+    email: jesse@dhillon.com
+  license:
+    name: proprietary
+  version: 1.0.0
+servers:
+- url: https://localhost/v1
+tags:
+- name: supporter
+  description: Supporters
+- name: project
+  description: Projects
+- name: team
+  description: Team
+paths:
+  /users:
+    get:
+      tags:
+        - admin
+      security:
+        - sessionCookie:
+          - profile.list
+      summary: Retrieve a filtered list of `UserProfiles`
+      description: >
+        List profiles and filter on the basis of audience membership or other
+        criteria.
+      operationId: listUserProfiles
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+        - in: query
+          name: page_size
+          schema:
+            type: integer
+      responses:
+        200:
+          $ref: '#/components/responses/ListUserProfilesResponse'
+    post:
+      tags:
+        - admin
+      security:
+        - sessionCookie:
+          - profile.create
+      summary: Create a `UserProfile`
+      operationId: createUserProfile
+      requestBody:
+        $ref: '#/components/requestBodies/CreateUserProfileRequest'
+      responses:
+        200:
+          $ref: '#/components/responses/CreateUserProfileResponse'
+  /users/{userProfileId}:
+    get:
+      tags:
+        - admin
+      security:
+        - sessionCookie:
+          - profile.list
+      summary: Retrieve an existing `UserProfile`
+      operationId: getUserProfile
+      parameters:
+        - in: path
+          name: userProfileId
+          schema:
+            type: string
+            format: uuid
+          required: true
+      responses:
+        200:
+          $ref: '#/components/responses/GetUserProfileResponse'
+        404:
+          $ref: '#/components/responses/ErrorResponse'
+    put:
+      tags:
+        - admin
+      security:
+        - sessionCookie:
+          - profile.edit
+      summary: Update an existing `UserProfile`
+      operationId: updateUserProfile
+      parameters:
+        - in: path
+          name: userProfileId
+          schema:
+            type: string
+            format: uuid
+          required: true
+      requestBody:
+        description: "`UserProfile` object to be persisted"
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserProfile'
+        required: true
+      responses:
+        200:
+          $ref: '#/components/responses/UpdateUserProfileResponse'
+        400:
+          $ref: '#/components/responses/UpdateUserProfileClientErrorResponse'
+    delete:
+      tags:
+        - admin
+      security:
+        - sessionCookie:
+          - profile.delete
+      summary: Delete an existing `UserProfile`
+      operationId: deleteUserProfile
+      parameters:
+        - in: path
+          name: userProfileId
+          schema:
+            type: string
+            format: uuid
+          required: true
+      responses:
+        200:
+          $ref: '#/components/responses/BasicResponse'
+        302:
+          description: When self-deletion succeeds, deauthorize and redirect to default URL
+        403:
+          $ref: '#/components/responses/AuthnzRefusedResponse'
+        404:
+          $ref: '#/components/responses/ErrorResponse'
+  /users/{userProfileId}/contactMethods/{contactMethodId}/verify:
+    get:
+      tags:
+        - authn
+      security:
+        - sessionCookie:
+          - profile.list
+      summary: Request `UserProfile` contact method verification
+      operationId: getUserProfileContactMethodVerificationChallenge
+      parameters:
+        - in: path
+          name: userProfileId
+          schema:
+            type: string
+            format: uuid
+          required: true
+        - in: path
+          name: contactMethodId
+          schema:
+            type: string
+            format: uuid
+          required: true
+      responses:
+        200:
+          $ref: '#/components/responses/ContactMethodVerificationChallengeResponse'
+        401:
+          $ref: '#/components/responses/ErrorResponse'
+        403:
+          $ref: '#/components/responses/ContactMethodAlreadyVerifiedErrorResponse'
+    post:
+      tags:
+        - authn
+      security:
+        - sessionCookie:
+          - profile.list
+      summary: Respond to `ContactMethodVerificationChallengeResponse`
+      operationId: postUserProfileContactMethodVerificationChallenge
+      requestBody:
+        $ref: '#/components/requestBodies/ContactMethodVerificationChallengeResponseRequest'
+      responses:
+        200:
+          $ref: '#/components/responses/BasicResponse'
+  /authn/session:
+    post:
+      tags:
+        - authn
+      summary: Initiate an authentication challenge-response session
+      operationId: postAuthnSession
+      requestBody:
+        $ref: '#/components/requestBodies/AuthnSessionRequest'
+      responses:
+        200:
+          description: Session established
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+  /authn/challenge:
+    get:
+      tags:
+        - authn
+      summary: Initiate an authentication challenge-response flow
+      operationId: getAuthnChallenge
+      security:
+        - sessionCookie:
+          - authn
+      responses:
+        200:
+          $ref: '#/components/responses/AuthnChallengeResponse'
+        400:
+          $ref: '#/components/responses/ErrorResponse'
+        403:
+          $ref: '#/components/responses/ErrorResponse'
+    post:
+      tags:
+        - authn
+      summary: Respond to an `AuthnChallenge`
+      operationId: postAuthnChallenge
+      security:
+        - sessionCookie:
+          - authn
+      requestBody:
+        $ref: '#/components/requestBodies/AuthnChallengeResponseRequest'
+      responses:
+        200:
+          $ref: '#/components/responses/AuthnAcceptedResponse'
+        202:
+          $ref: '#/components/responses/AuthnChallengeResponse'
+        401:
+          $ref: '#/components/responses/AuthnzRefusedResponse'
+  /authz/session:
+    get:
+      tags:
+        - authn
+      summary: Escalate the authorization of the session
+      operationId: getAuthzSession
+      security:
+        - sessionCookie:
+          - authz
+      parameters:
+        - in: query
+          name: paseto
+          description: "[PASETO](https://developer.okta.com/blog/2019/10/17/a-thorough-introduction-to-paseto)-formatted token"
+          schema:
+            type: string
+            format: paseto
+          required: true
+        - in: query
+          name: dest
+          description: URL to which user should be redirected after sucessfully establishing session
+          schema:
+            type: string
+            format: url
+      responses:
+        200:
+          description: Session authorized
+        302:
+          description: Session authorized, redirect to `dest`
+        401:
+          $ref: '#/components/responses/AuthnzRefusedResponse'
+  /plan:
+    get:
+      tags:
+        - commerce
+      summary: Get the list of `SubscriptionPlans`
+      operationId: listSubscriptionPlans
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+        - in: query
+          name: page_size
+          schema:
+            type: integer
+      responses:
+        200:
+          $ref: '#/components/responses/ListSubscriptionPlansResponse'
+    post:
+      tags:
+        - commerce
+      summary: Create a `SubscriptionPlan`
+      operationId: createSubscriptionPlan
+      security:
+        - sessionCookie:
+          - plan.create
+      requestBody:
+        $ref: '#/components/requestBodies/CreateSubscriptionPlanRequest'
+      responses:
+        200:
+          $ref: '#/components/responses/CreateSubscriptionPlanResponse'
+        400:
+          $ref: '#/components/responses/ErrorResponse'
+  /plan/{subscriptionPlanId}:
+    put:
+      tags:
+        - commerce
+      summary: Update a `SubscriptionPlan`
+      operationId: updateSubscriptionPlan
+      security:
+        - sessionCookie:
+          - plan.update
+      parameters:
+        - in: path
+          name: subscriptionPlanId
+          schema:
+            type: string
+          required: true
+      requestBody:
+        $ref: '#/components/requestBodies/UpdateSubscriptionPlanRequest'
+      responses:
+        200:
+          $ref: '#/components/responses/UpdateSubscriptionPlanResponse'
+        400:
+          $ref: '#/components/responses/ErrorResponse'
+        404:
+          $ref: '#/components/responses/ErrorResponse'
+    delete:
+      tags:
+        - commerce
+      summary: Delete a `SubscriptionPlan`
+      operationId: updateSubscriptionPlan
+      security:
+        - sessionCookie:
+          - plan.update
+      parameters:
+        - in: path
+          name: subscriptionPlanId
+          schema:
+            type: string
+          required: true
+      requestBody:
+        $ref: '#/components/requestBodies/UpdateSubscriptionPlanRequest'
+      responses:
+        200:
+          $ref: '#/components/responses/UpdateSubscriptionPlanResponse'
+        400:
+          $ref: '#/components/responses/ErrorResponse'
+        404:
+          $ref: '#/components/responses/ErrorResponse'
+        405:
+          $ref: '#/components/responses/ErrorResponse'
+  /feeds:
+    get:
+      tags:
+        - content
+      summary: Retrieve the primary (default) `Feed`
+      operationId: getDefaultFeed
+      responses:
+        200:
+          $ref: '#/components/responses/GetFeedResponse'
+        403:
+          $ref: '#/components/responses/ErrorResponse'
+        404:
+          $ref: '#/components/responses/ErrorResponse'
+    post:
+      tags:
+        - content
+      summary: Define a `Feed`
+      operationId: createFeed
+      security:
+        - sessionCookie:
+          - feed.create
+      requestBody:
+        $ref: '#/components/requestBodies/CreateFeedRequest'
+      responses:
+        200:
+          $ref: '#/components/responses/CreateFeedResponse'
+        400:
+          $ref: '#/components/responses/ErrorResponse'
+  /feeds/{feedKey}:
+    get:
+      tags:
+        - content
+      summary: Retrieve a given `Feed`
+      operationId: getFeed
+      parameters:
+        - in: path
+          name: feedKey
+          schema:
+            type: string
+          required: true
+      security:
+        - sessionCookie:
+          - feed.list(feed={feedKey})
+      responses:
+        200:
+          $ref: '#/components/responses/GetFeedResponse'
+        403:
+          $ref: '#/components/responses/ErrorResponse'
+        404:
+          $ref: '#/components/responses/ErrorResponse'
+        409:
+          $ref: '#/components/responses/ErrorResponse'
+  /feeds/{feedKey}/articles:
+    post:
+      tags:
+        - content
+      summary: Create a new `Article` in a `Feed`
+      operationId: postArticle
+      security:
+        - sessionCookie:
+          - article.create(feed={feedKey})
+      responses:
+        200:
+          $ref: '#/components/responses/CreateArticleResponse'
+        403:
+          $ref: '#/components/responses/ErrorResponse'
+        405:
+          $ref: '#/components/responses/ErrorResponse'
+  /feeds/{feedKey}/articles/{articleKey}:
+    get:
+      tags:
+        - content
+      summary: Retrieve a given `Article`
+      operationId: getArticle
+      parameters:
+        - in: path
+          name: articleKey
+          schema:
+            type: string
+          required: true
+      security:
+        - sessionCookie:
+          - article.read
+      responses:
+        200:
+          $ref: '#/components/responses/GetArticleResponse'
+        403:
+          $ref: '#/components/responses/ErrorResponse'
+        404:
+          $ref: '#/components/responses/ErrorResponse'
+        409:
+          $ref: '#/components/responses/ErrorResponse'
+    post:
+      tags:
+        - content
+      summary: Update a given `Article`
+      operationId: updateArticle
+      parameters:
+        - in: path
+          name: articleKey
+          schema:
+            type: string
+          required: true
+      security:
+        - sessionCookie:
+          - article.update
+      requestBody:
+        $ref: '#/components/requestBodies/UpdateArticleRequest'
+      responses:
+        200:
+          $ref: '#/components/responses/UpdateArticleResponse'
+        403:
+          $ref: '#/components/responses/ErrorResponse'
+        404:
+          $ref: '#/components/responses/ErrorResponse'
+components:
+  schemas:
+    $ref: './schemas.yaml'
+  requestBodies:
+    $ref: './requestBodies.yaml'
+  responses:
+    $ref: './responses.yaml'
+  securitySchemes:
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: SESSION

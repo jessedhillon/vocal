@@ -1,0 +1,69 @@
+AuthnSessionRequest:
+  description: Present principal identifier on whose behalf to initiate authentication flow
+  content:
+    application/json:
+      schema:
+        type: object
+        properties:
+          principalName:
+            type: string
+      examples:
+        emailPrincipal:
+          value:
+            principalName: jesse@dhillon.com
+        phonePrincipal:
+          value:
+            principalName: +19165018642
+AuthnChallengeResponseRequest:
+  description: Present the `AuthnChallengeResponse` to a given challenge
+  content:
+    application/json:
+      schema:
+        oneOf:
+          - $ref: './schemas.yaml#/MethodSelectAuthnChallengeResponse'
+          - $ref: './schemas.yaml#/OtpAuthnChallengeResponse'
+          - $ref: './schemas.yaml#/EmailAuthnChallengeResponse'
+ContactMethodVerificationChallengeResponseRequest:
+  description: Present the `AuthnChallengeResponse` to a given challenge, _e.g._ OTP passcode
+  content:
+    application/json:
+      schema:
+        oneOf:
+          - $ref: './schemas.yaml#/OtpAuthnChallengeResponse'
+          - $ref: './schemas.yaml#/EmailAuthnChallengeResponse'
+CreateUserProfileRequest:
+  description: "`UserProfile` create request"
+  content:
+    application/json:
+      schema:
+        $ref: './schemas.yaml#/UserProfile'
+CreateSubscriptionPlanRequest:
+  description: "`SubscriptionPlan` create request"
+  content:
+    application/json:
+      schema:
+        $ref: './schemas.yaml#/SubscriptionPlan'
+UpdateSubscriptionPlanRequest:
+  description: "`SubscriptionPlan` update request"
+  content:
+    application/json:
+      schema:
+        $ref: './schemas.yaml#/SubscriptionPlan'
+CreateArticleRequest:
+  description: "`Article` create request"
+  content:
+    application/json:
+      schema:
+        $ref: './schemas.yaml#/Article'
+UpdateArticleRequest:
+  description: "`Article` update request"
+  content:
+    application/json:
+      schema:
+        $ref: './schemas.yaml#/Article'
+CreateFeedRequest:
+  description: "`Feed` create request"
+  content:
+    application/json:
+      schema:
+        $ref: './schemas.yaml#/Feed'

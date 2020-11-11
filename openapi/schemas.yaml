@@ -1,0 +1,782 @@
+ArticleType:
+  type: string
+  enum:
+    - article
+    - image
+    - audio
+    - video
+    - file
+RelativeDateTimeRange:
+  type: object
+  properties:
+    baseDateTime:
+      type: string
+      format: iso8601
+    maxOffset:
+      type: integer
+      format: seconds
+    minOffset:
+      type: integer
+      format: seconds
+AbsoluteDateTimeRange:
+  type: object
+  properties:
+    startDateTime:
+      type: string
+      format: iso8601
+    endDateTime:
+      type: string
+      format: iso8601
+RelativeDateTime:
+  type: object
+  properties:
+    hourOfDay:
+      type: integer
+    dayOfWeek:
+      type: integer
+      enum:
+        - mon
+        - tue
+        - wed
+        - thurs
+        - fri
+        - sat
+        - sun
+    dayOfMonth:
+      type: integer
+    weekOfMonth:
+      type: integer
+    monthOfYear:
+      type: integer
+    dayOffset:
+      type: integer
+    weekdayOffset:
+      type: integer
+    hourOffset:
+      type: integer
+    weekOffset:
+      type: integer
+    monthOffset:
+      type: integer
+  example:
+    specificHourOfNextDay:
+      hourOfDay: 8
+      dayOffset: 1
+    nextWeekdayMorning:
+      weekdayOffset: 1
+      hourDay: 8
+    firstDayOfNextMonth:
+      dayOfMonth: 1
+    firstMondayOfNovember:
+      dayOfWeek: mon
+      weekOfMonth: 1
+      monthOfYear: 11
+Feed:
+  type: object
+  properties:
+    feedId:
+      type: string
+      format: uuid
+    feedType:
+      type: string
+      enum:
+        - static
+        - dynamic
+    audiences:
+      type: array
+      items:
+        $ref: '#/Audience'
+DynamicFeed:
+  type: object
+  allOf:
+    - $ref: '#/Feed'
+    - properties:
+        feedType:
+          type: string
+          enum:
+            - dynamic
+        authors:
+          type: array
+          items:
+            $ref: '#/UserProfile'
+        absoluteDateTimeRange:
+          $ref: '#/AbsoluteDateTimeRange'
+        relativeDateTimeRange:
+          $ref: '#/RelativeDateTimeRange'
+        articleTypes:
+          type: array
+          items:
+            $ref: '#/ArticleType'
+        articleCategories:
+          type: array
+          items:
+            type: array
+            items:
+              type: string
+        articleTags:
+          type: array
+          items:
+            type: string
+FeedListener:
+  type: object
+  properties:
+    feedListenerId:
+      type: string
+      format: uuid
+    actionType:
+      type: string
+      enum:
+        - email
+        - sms
+        - push
+EmailFeedListener:
+  type: object
+  allOf:
+    - $ref: '#/FeedListener'
+    - properties:
+        scheduledSendTime:
+          $ref: '#/RelativeDateTime'
+SmsFeedListener:
+  type: object
+  allOf:
+    - $ref: '#/FeedListener'
+    - properties:
+        scheduledSendTime:
+          $ref: '#/RelativeDateTime'
+Article:
+  type: object
+  properties:
+    articleId:
+      type: string
+      format: uuid
+    author:
+      $ref: '#/UserProfile'
+    title:
+      type: string
+    subtitle:
+      type: string
+    excerpt:
+      type: string
+    body:
+      type: string
+    articleType:
+      $ref: '#/ArticleType'
+    textFormat:
+      type: string
+      enum:
+        - markdown
+        - html
+        - plain
+    attachments:
+      type: array
+      items:
+        $ref: '#/Attachment'
+    category:
+      type: array
+      items:
+        type: string
+    tags:
+      type: array
+      items:
+        type: string
+Attachment:
+  type: object
+  properties:
+    attachmentId:
+      type: string
+      format: uuid
+    title:
+      type: string
+    type:
+      type: string
+      enum:
+        - image
+        - audio
+        - video
+        - file
+    role:
+      type: string
+      enum:
+        - content
+        - cover
+    audiences:
+      type: array
+      items:
+        $ref: '#/Audience'
+ImageAttachment:
+  type: object
+  allOf:
+    - $ref: '#/Attachment'
+    - properties:
+        width:
+          type: integer
+        height:
+          type: integer
+        resourceUrl:
+          type: string
+          format: url
+AudioAttachment:
+  allOf:
+    - $ref: '#/Attachment'
+    - properties:
+        length:
+          type: integer
+        resourceUrl:
+          type: string
+          format: url
+VideoAttachment:
+  type: object
+  allOf:
+    - $ref: '#/Attachment'
+    - properties:
+        width:
+          type: integer
+        height:
+          type: integer
+        resourceUrl:
+          type: string
+          format: url
+FileAttachment:
+  type: object
+  allOf:
+    - $ref: '#/Attachment'
+    - properties:
+        size:
+          type: integer
+        resourceUrl:
+          type: string
+          format: url
+Audience:
+  type: object
+  properties:
+    audienceId:
+      type: string
+      format: uuid
+    name:
+      type: string
+    membership:
+      type: array
+      items:
+        $ref: '#/SubscriptionPlan'
+ContactMethod:
+  type: object
+  properties:
+    contactMethodId:
+      type: string
+      format: uuid
+    value:
+      type: string
+    verified:
+      type: boolean
+EmailContactMethod:
+  type: object
+  allOf:
+    - $ref: '#/ContactMethod'
+    - properties:
+        value:
+          type: string
+          format: email
+PhoneNumberContactMethod:
+  type: object
+  allOf:
+    - $ref: '#/ContactMethod'
+    - properties:
+        value:
+          type: string
+          format: phone
+MailingAddressContactMethod:
+  type: object
+  allOf:
+    - $ref: '#/ContactMethod'
+    - properties:
+        value:
+          type: object
+          properties:
+            countryCode:
+              type: string
+              format: iso3166-2
+            administrativeArea:
+              type: string
+            locality:
+              type: string
+            dependentLocality:
+              type: string
+            postalCode:
+              type: string
+            sortingCode:
+              type: string
+            organization:
+              type: string
+            name:
+              type: string
+            formatted:
+              type: string
+UserProfile:
+  type: object
+  properties:
+    profileId:
+      type: string
+      format: uuid
+    public:
+      type: object
+      properties:
+        displayName:
+          type: string
+        startedAt:
+          type: string
+          format: iso8601
+    private:
+      type: object
+      properties:
+        name:
+          type: string
+        address:
+          type: object
+          items:
+            type: string
+        city:
+          type: string
+        division:
+          type: string
+        contact:
+          type: object
+          properties:
+            emailAddress:
+              $ref: '#/EmailContactMethod'
+            phoneNumber:
+              $ref: '#/PhoneNumberContactMethod'
+            billingAddress:
+              $ref: '#/MailingAddressContactMethod'
+        payment:
+          type: object
+          properties:
+            processor:
+              type: string
+            processorCustomerId:
+              type: string
+            method:
+              type: string
+            displayName:
+              type: string
+    auth:
+      type: object
+      properties:
+        password:
+          type: string
+          format: bcrypt
+        role:
+          type: string
+          enum:
+            - superuser
+            - manager
+            - creator
+            - member
+MemberProfile:
+  allOf:
+    - $ref: '#/UserProfile'
+    - type: object
+      properties:
+        socialProfiles:
+          type: array
+          items:
+            $ref: '#/SocialProfile'
+SocialProfile:
+  type: object
+  properties:
+    network:
+      type: string
+      enum:
+        - google
+        - facebook
+        - twitter
+        - patreon
+    url:
+      type: string
+      format: url
+    refreshToken:
+      type: string
+SubscriberProfile:
+  allOf:
+    - $ref: '#/MemberProfile'
+    - type: object
+      properties:
+        subscription:
+          $ref: '#/Subscription'
+Subscription:
+  type: object
+  properties:
+    subscriptionId:
+      type: string
+      format: uuid
+    processorSubscriptionId:
+      type: string
+    plan:
+      $ref: '#/SubscriptionPlan'
+    startedAt:
+      type: string
+      format: iso8601
+    expiresAt:
+      type: string
+      format: iso8601
+SubscriptionPlan:
+  type: object
+  properties:
+    subscriptionPlanId:
+      type: string
+      format: uuid
+    status:
+      type: string
+      enum:
+        - active
+        - inactive
+    rank:
+      type: integer
+    name:
+      type: string
+    description:
+      type: string
+    paymentDemands:
+      type: array
+      items:
+        $ref: '#/PaymentDemand'
+    membership:
+      type: array
+      items:
+        $ref: '#/UserProfile'
+PaymentDemand:
+  type: object
+  properties:
+    price:
+      $ref: '#/MultiCurrencyAmount'
+    demandType:
+      type: string
+      enum:
+        - periodic
+        - immediate
+        - pay-go
+PeriodicPaymentDemand:
+  type: object
+  allOf:
+    - $ref: '#/PaymentDemand'
+    - properties:
+        demandType:
+          type: string
+          enum:
+            - periodic
+        period:
+          type: string
+          enum:
+            - weekly
+            - monthly
+            - quarterly
+            - yearly
+ImmediatePaymentDemand:
+  type: object
+  allOf:
+    - $ref: '#/PaymentDemand'
+    - properties:
+        demandType:
+          type: string
+          enum:
+            - immediate
+MonetaryAmount:
+  type: object
+  properties:
+    amount:
+      type: string
+      format: fixed
+    isoCurrency:
+      type: string
+      format: iso4217
+    nonIsoCurrency:
+      type: string
+  oneOf:
+    - required:
+      - amount
+      - isoCurrency
+    - required:
+      - amount
+      - nonIsoCurrency
+MultiCurrencyAmount:
+  type: object
+  properties:
+    USD:
+      $ref: '#/MonetaryAmount'
+    EUR:
+      $ref: '#/MonetaryAmount'
+    GBP:
+      $ref: '#/MonetaryAmount'
+    cad:
+      $ref: '#/MonetaryAmount'
+PaymentDetails:
+  type: object
+  properties:
+    id:
+      type: integer
+      format: int64
+    paymentDetailsType:
+      type: string
+      enum:
+      - ACH
+      - CreditCard
+CreditCardPaymentDetails:
+  allOf:
+  - $ref: '#/PaymentDetails'
+  - required:
+    - cardNumber
+    - cvv
+    - expiry
+    - zip
+    type: object
+    properties:
+      cardNumber:
+        type: string
+        format: credit-card
+      cvv:
+        type: string
+      expiry:
+        type: string
+        format: strftime:%m%y
+        example: "0422"
+      zip:
+        type: string
+        format: regex:/^\d{5}$/
+AchPaymentDetails:
+  allOf:
+  - $ref: '#/PaymentDetails'
+  - required:
+    - accountNumber
+    - routingNumber
+    type: object
+    properties:
+      accountNumber:
+        type: string
+        format: regex:/^\d{4,17}$/
+      routingNumber:
+        type: string
+        format: regex:/^\d{9}$/
+PaymentProfile:
+  required:
+  - name
+  - paymentDetails
+  type: object
+  properties:
+    id:
+      type: integer
+      format: int64
+    name:
+      type: string
+    paymentDetails:
+      $ref: '#/PaymentDetails'
+Commitment:
+  required:
+  - amount
+  - commitmentType
+  - createdAt
+  - paymentDetailsId
+  - token
+  type: object
+  properties:
+    commitmentType:
+      type: string
+      enum:
+      - Subscription
+      - Contribution
+    createdAt:
+      type: string
+      format: date-time
+    token:
+      type: string
+      format: regex:/^[\da-f]{64}$/
+    paymentDetailsId:
+      type: integer
+      format: int64
+    amount:
+      type: integer
+      format: int64
+SubscriptionCommitment:
+  allOf:
+  - $ref: '#/Commitment'
+  - required:
+    - status
+    type: object
+    properties:
+      status:
+        type: string
+        enum:
+        - Active
+        - Inactive
+        - NeedsAction
+ContributionCommitment:
+  allOf:
+  - $ref: '#/Commitment'
+  - required:
+    - status
+    type: object
+    properties:
+      status:
+        type: string
+        enum:
+        - Completed
+        - Rejected
+ApiMessage:
+  type: object
+  properties:
+    status:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        errors:
+          type: array
+          items:
+            $ref: '#/Error'
+      required:
+        - success
+Error:
+  type: object
+  properties:
+    context:
+      type: string
+    message:
+      type: string
+ErrorMessage:
+  type: object
+  allOf:
+    - $ref: '#/ApiMessage'
+    - required:
+        - message
+        - errors
+ScalarResult:
+  type: object
+  allOf:
+    - $ref: '#/ApiMessage'
+    - properties:
+        data:
+          type: object
+PagedResultSet:
+  type: object
+  allOf:
+    - $ref: '#/ApiMessage'
+    - properties:
+        page:
+          type: object
+          properties:
+            page:
+              type: integer
+            total:
+              type: integer
+            size:
+              type: integer
+          required:
+            - page
+            - total
+            - size
+        results:
+          type: array
+          items:
+            type: object
+AuthnChallenge:
+  type: object
+  properties:
+    challengeId:
+      type: string
+      format: uuid
+    challengeType:
+      type: string
+      enum:
+        - method_select
+        - otp
+        - email
+AuthnChallengeResponse:
+  type: object
+  properties:
+    challengeId:
+      type: string
+      format: uuid
+MethodSelectAuthnChallenge:
+  type: object
+  allOf:
+    - $ref: '#/AuthnChallenge'
+    - properties:
+        challengeType:
+          type: string
+          enum:
+            - method_select
+        contactMethods:
+          type: array
+          items:
+            type: object
+            properties:
+              contactMethodId:
+                type: string
+                format: uuid
+              displayMask:
+                type: string
+                example: j***@d***.com
+              contactMethodType:
+                type: string
+                enum:
+                  - email
+                  - sms
+MethodSelectAuthnChallengeResponse:
+  type: object
+  allOf:
+    - $ref: '#/AuthnChallenge'
+    - properties:
+        contactMethodId:
+          type: string
+          format: uuid
+OtpAuthnChallenge:
+  type: object
+  allOf:
+    - $ref: '#/AuthnChallenge'
+    - properties:
+        challengeType:
+          type: string
+          enum:
+            - otp
+OtpAuthnChallengeResponse:
+  type: object
+  allOf:
+    - $ref: '#/AuthnChallengeResponse'
+    - properties:
+        passcode:
+          type: string
+EmailAuthnChallenge:
+  type: object
+  allOf:
+    - $ref: '#/AuthnChallenge'
+    - properties:
+        challengeType:
+          type: string
+          enum:
+            - email
+EmailAuthnChallengeResponse:
+  type: object
+  allOf:
+    - $ref: '#/AuthnChallengeResponse'
+    - properties:
+        passcode:
+          type: string
+PasetoToken:
+  type: object
+  description: A [PASETO](https://developer.okta.com/blog/2019/10/17/a-thorough-introduction-to-paseto) token
+  properties:
+    version:
+      type: string
+    purpose:
+      type: string
+      enum:
+        - public
+        - local
+    payload:
+      type: string
+    footer:
+      type: string
+  required:
+    - version
+    - purpose
+    - payload

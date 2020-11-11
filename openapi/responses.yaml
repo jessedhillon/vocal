@@ -1,0 +1,204 @@
+BasicResponse:
+  description: Successful response
+  content:
+    application/json:
+      schema:
+        $ref: './schemas.yaml#/ApiMessage'
+ErrorResponse:
+  description: Error encountered
+  content:
+    application/json:
+      schema:
+        $ref: './schemas.yaml#/ErrorMessage'
+GetUserProfileResponse:
+  description: Scalar user profile response
+  content:
+    application/json:
+      schema:
+        allOf:
+          - $ref: './schemas.yaml#/ScalarResult'
+          - properties:
+              data:
+                $ref: './schemas.yaml#/UserProfile'
+ListUserProfilesResponse:
+  description: Success
+  content:
+    application/json:
+      schema:
+        allOf:
+          - $ref: './schemas.yaml#/PagedResultSet'
+          - properties:
+              results:
+                type: array
+                items:
+                  $ref: './schemas.yaml#/UserProfile'
+CreateUserProfileResponse:
+  description: Create `UserProfile` successful response
+  content:
+    application/json:
+      schema:
+        allOf:
+          - $ref: './schemas.yaml#/ScalarResult'
+          - properties:
+              data:
+                $ref: './schemas.yaml#/UserProfile'
+UpdateUserProfileResponse:
+  description: "`UserProfile` updated successfully"
+  content:
+    application/json:
+      schema:
+        $ref: './schemas.yaml#/ApiMessage'
+UpdateUserProfileClientErrorResponse:
+  description: Invalid `UserProfile`
+  content:
+    application/json:
+      schema:
+        $ref: './schemas.yaml#/ErrorMessage'
+AuthnChallengeResponse:
+  description: Authentication challenge
+  content:
+    application/json:
+      schema:
+        oneOf:
+          - $ref: './schemas.yaml#/MethodSelectAuthnChallenge'
+          - $ref: './schemas.yaml#/OtpAuthnChallenge'
+          - $ref: './schemas.yaml#/EmailAuthnChallenge'
+ContactMethodVerificationChallengeResponse:
+  description: Contact method verification
+  content:
+    application/json:
+      schema:
+        oneOf:
+          - $ref: './schemas.yaml#/OtpAuthnChallenge'
+          - $ref: './schemas.yaml#/EmailAuthnChallenge'
+ContactMethodAlreadyVerifiedErrorResponse:
+  description: Contact method is already verified
+  content:
+    application/json:
+      schema:
+        $ref: './schemas.yaml#/ErrorMessage'
+AuthnAcceptedResponse:
+  description: Authentication accepted, authz token provided
+  content:
+    application/json:
+      schema:
+        $ref: './schemas.yaml#/PasetoToken'
+AuthnzRefusedResponse:
+  description: Authn/z refused
+  content:
+    application/json:
+      schema:
+        $ref: './schemas.yaml#/ErrorMessage'
+ListSubscriptionPlansResponse:
+  description: Success
+  content:
+    application/json:
+      schema:
+        allOf:
+          - $ref: './schemas.yaml#/PagedResultSet'
+          - properties:
+              results:
+                type: array
+                items:
+                  $ref: './schemas.yaml#/SubscriptionPlan'
+CreateSubscriptionPlanResponse:
+  description: Create `SubscriptionPlan` successful response
+  content:
+    application/json:
+      schema:
+        allOf:
+          - $ref: './schemas.yaml#/ScalarResult'
+          - properties:
+              data:
+                $ref: './schemas.yaml#/SubscriptionPlan'
+UpdateSubscriptionPlanResponse:
+  description: Update `SubscriptionPlan` successful response
+  content:
+    application/json:
+      schema:
+        allOf:
+          - $ref: './schemas.yaml#/ScalarResult'
+          - properties:
+              data:
+                $ref: './schemas.yaml#/SubscriptionPlan'
+GetFeedResponse:
+  description: "`Feed` successful response"
+  content:
+    application/json:
+      schema:
+        allOf:
+          - $ref: './schemas.yaml#/PagedResultSet'
+          - properties:
+              data:
+                $ref: './schemas.yaml#/Article'
+    application/rss+xml:
+      schema:
+        type: object
+        properties:
+          rss:
+            type: object
+            properties:
+              version:
+                type: string
+                xml:
+                  attribute: true
+              channel:
+                type: object
+                properties:
+                  title:
+                    type: string
+                  description:
+                    type: string
+                  link:
+                    type: string
+                  item:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        title:
+                          type: string
+                        link:
+                          type: string
+                        description:
+                          type: string
+CreateFeedResponse:
+  description: "`Feed` successfully created"
+  content:
+    application/json:
+      schema:
+        allOf:
+          - $ref: './schemas.yaml#/ScalarResult'
+          - properties:
+              data:
+                $ref: './schemas.yaml#/Feed'
+GetArticleResponse:
+  description: "`Article` successful response"
+  content:
+    application/json:
+      schema:
+        allOf:
+          - $ref: './schemas.yaml#/ScalarResult'
+          - properties:
+              data:
+                $ref: './schemas.yaml#/Article'
+CreateArticleResponse:
+  description: Create `Article` successful response
+  content:
+    application/json:
+      schema:
+        allOf:
+          - $ref: './schemas.yaml#/ScalarResult'
+          - properties:
+              data:
+                $ref: './schemas.yaml#/Article'
+UpdateArticleResponse:
+  description: Update `Article` successful response
+  content:
+    application/json:
+      schema:
+        allOf:
+          - $ref: './schemas.yaml#/ScalarResult'
+          - properties:
+              data:
+                $ref: './schemas.yaml#/Article'
