@@ -1,0 +1,15 @@
+{
+  "name": "Vocal",
+  "description": "Self-hosted content publishing and membership management engine.",
+  "version": "0.0.1",
+  "private": true,
+  "author": "Jesse Dhillon",
+  "homepage": "https://vocal.social/",
+  "contributors": [ "Jesse Dhillon <jesse@dhillon.com> (https://github.com/jessedhillon)" ],
+  "bugs": { "url": "" },
+  "dependencies": {
+    "swagger-cli": "^4.0.4"
+  },
+  "keywords": [],
+  "repository": ""
+}
