@@ -19,4 +19,9 @@ setup(name='vocal',
           'colorlog==4.6.2',
           'jinja2==2.11.2',
           'PyYAML==5.3.1'
-      ])
+      ],
+      entry_points={
+          'console_scripts': [
+              'vocal=vocal.cli:main'
+          ]
+      })
