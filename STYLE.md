@@ -63,8 +63,6 @@ http://tbaggery.com/2008/04/19/a-note-about-git-commit-messages.html
 
 #### Breaking changes
 
-Breaking changes
-
 All breaking changes have to be mentioned as a breaking change block in the footer, which should start with the word BREAKING CHANGE: with a space or two newlines. The rest of the commit message is then the description of the change, justification and migration notes.
 
 ```
