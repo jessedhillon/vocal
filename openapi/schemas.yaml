@@ -264,6 +264,12 @@ ContactMethod:
     contactMethodId:
       type: string
       format: uuid
+    method:
+      type: string
+      enum:
+        - email
+        - phone
+        - address
     value:
       type: string
     verified:
@@ -305,6 +311,10 @@ MailingAddressContactMethod:
               type: string
             sortingCode:
               type: string
+            address2:
+              type: string
+            address1:
+              type: string
             organization:
               type: string
             name:
@@ -322,21 +332,13 @@ UserProfile:
       properties:
         displayName:
           type: string
-        startedAt:
+        createdAt:
           type: string
           format: iso8601
     private:
       type: object
       properties:
         name:
-          type: string
-        address:
-          type: object
-          items:
-            type: string
-        city:
-          type: string
-        division:
           type: string
         contact:
           type: object
