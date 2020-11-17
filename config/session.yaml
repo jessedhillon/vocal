@@ -1,0 +1,3 @@
+storage: redis
+pool: redis://localhost:6379
+cookie_name: SESSION
