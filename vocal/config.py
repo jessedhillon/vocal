@@ -1,15 +1,12 @@
-import glob
 from pathlib import Path
 
 import yaml
 
-import vocal.log
 
-
-def _load_config(config_path):
+async def load_config(config_path):
     cfpath = Path(config_path) / 'config.yaml'
     with cfpath.open('r') as cf:
-        config = yaml.load(cf.read(), Loader=yaml.CLoader)
+        config = yaml.load(cf.read(), Loader=yaml.CLoader) or {}
 
     for p in cfpath.parent.glob('*.yaml'):
         path = Path(p)
@@ -20,11 +17,5 @@ def _load_config(config_path):
             raise RuntimeError(f"disallowed or multiply-defined configuration key: {keyname}")
         with path.open('r') as f:
             config[keyname] = yaml.load(f.read(), Loader=yaml.CLoader)
-    return config
 
-
-async def configure(config_path):
-    config = _load_config(config_path)
-
-    vocal.log.configure(config)
     return config
