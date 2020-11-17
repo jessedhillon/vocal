@@ -19,3 +19,5 @@ loggers:
     level: INFO
   vocal:
     level: DEBUG
+  sqlalchemy.engine:
+    level: INFO
