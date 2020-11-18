@@ -174,7 +174,7 @@ paths:
       tags:
         - authn
       summary: Initiate an authentication challenge-response session
-      operationId: postAuthnSession
+      operationId: initAuthnSession
       requestBody:
         $ref: '#/components/requestBodies/AuthnSessionRequest'
       responses:
@@ -204,7 +204,7 @@ paths:
       tags:
         - authn
       summary: Respond to an `AuthnChallenge`
-      operationId: postAuthnChallenge
+      operationId: validateAuthnChallengeResponse
       security:
         - sessionCookie:
           - authn
