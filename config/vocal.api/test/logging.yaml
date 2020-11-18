@@ -1,0 +1,23 @@
+version: 1
+disable_existing_loggers: true
+root:
+  level: NOTSET
+  handlers: [console]
+handlers:
+  console:
+    level: NOTSET
+    class: vocal.log.TTYAwareColoredStreamHandler
+    stream: ext://sys.stderr
+    formatter: color
+formatters:
+  color:
+    (): vocal.log.TogglingColoredFormatter
+    format: "%(log_color)s[%(asctime)s %(name)s] %(levelname)-1.1s%(reset)s %(message)s"
+    datefmt: "%Y-%m-%d %H:%M:%S"
+loggers:
+  aiohttp:
+    level: INFO
+  vocal:
+    level: DEBUG
+  sqlalchemy.engine:
+    level: INFO
