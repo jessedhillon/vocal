@@ -27,21 +27,23 @@ base_path = Path(__file__).parent.parent
 async def main(loop, ctx, debug, config_path, env, app_path):
     try:
         loop.set_debug(debug)
+        appctx = vocal.config.AppConfig('debug', 'config', 'module')
 
         if config_path is None:
             config_path = base_path / 'config' / app_path
         if ctx.obj is None:
-            ctx.obj = {}
+            ctx.obj = appctx
 
-        ctx.obj.update(await vocal.config.load_config(config_path, env))
-        ctx.obj['module'] = import_module(app_path)
+        appctx.config.set(await vocal.config.load_config(config_path, env))
+        appctx.module.set(import_module(app_path))
 
-        await vocal.log.configure(ctx.obj)
+        await vocal.log.configure(appctx)
         logger = logging.getLogger(__name__)
 
+        appctx.debug.set(debug)
         if debug:
-            ctx.obj['debug'] = True
             logger.info('debugging mode enabled')
+        assert appctx.ready
     except:
         if debug:
             traceback.print_exc()
@@ -51,21 +53,22 @@ async def main(loop, ctx, debug, config_path, env, app_path):
 
 @main.command()
 @click.pass_obj
-def serve(config):
+def serve(appctx):
     loop = asyncio.get_event_loop()
     logger = logging.getLogger(__name__)
-    mod = config['module']
+    mod = appctx.module.get()
+    config = appctx.config.get()
 
-    async def setup_app(config, module):
-        config.update(await mod.configure(config))
-        return await module.initialize(config)
+    async def setup_app(appctx, module):
+        await mod.configure(appctx)
+        return await module.initialize(appctx)
 
-    app = loop.run_until_complete(setup_app(config, mod))
+    app = loop.run_until_complete(setup_app(appctx, mod))
     appconf = config['app'].copy()
     appname = appconf.pop('name')
 
     logger.info(f"starting {appname}")
-    aiohttp.web.run_app(app, **appconf)
+    loop.run_until_complete(aiohttp.web.run_app(app, **appconf))
 
 
 @main.group()

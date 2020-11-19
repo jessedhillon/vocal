@@ -12,6 +12,7 @@ __all__ = [
 ]
 
 
-async def configure(config):
+async def configure(appctx):
+    config = appctx.config.get()
     logging.config.dictConfig(config['logging'])
     logging.Formatter.converter = time.gmtime
