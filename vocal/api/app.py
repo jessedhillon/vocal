@@ -1,5 +1,6 @@
 import aioredis
 import aiohttp_session
+from aiohttp_session import SimpleCookieStorage
 from aiohttp_session.redis_storage import RedisStorage
 from aiohttp.web import Application
 
@@ -16,9 +17,12 @@ async def configure(appctx):
     if sc is not None:
         appctx.declare('session_store')
         if sc['storage'] == 'redis':
-            pool = await aioredis.create_pool(sc['pool'])
+            pool = await aioredis.create_redis_pool(sc['pool'])
             appctx.session_store.set(RedisStorage(pool, cookie_name=sc.get('cookie_name'),
                                                   encoder=util.json.encode))
+        elif sc['storage'] == 'simple':
+            appctx.session_store.set(SimpleCookieStorage(cookie_name=sc.get('cookie_name'),
+                                                         encoder=util.json.encode))
         else:
             raise ValueError(f"unsupported session storage: {sc['storage']}")
 

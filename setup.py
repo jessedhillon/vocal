@@ -20,7 +20,9 @@ setup(name='vocal',
           'click==7.1.2',
           'colorlog==4.6.2',
           'jinja2==2.11.2',
-          'PyYAML==5.3.1'
+          'PyYAML==5.3.1',
+          'pytest==6.1.2',
+          'pytest-aiohttp==0.3.0',
       ],
       entry_points={
           'console_scripts': [

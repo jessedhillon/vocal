@@ -6,7 +6,7 @@ from vocal.util.web import with_session, json_response
 
 import vocal.api.security as security
 import vocal.api.util as util
-from ..security import Capabilities as caps
+from vocal.api.security import Capabilities as caps
 
 
 @json_response
