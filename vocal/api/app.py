@@ -7,10 +7,13 @@ from aiohttp.web import Application
 import vocal.util as util
 
 from . import routes
+from . import storage
 
 
 async def configure(appctx):
     # e.g. configure storage, template renderer, etc
+    await storage.configure(appctx)
+
     config = appctx.config.get()
     sc = config.get('session')
 
