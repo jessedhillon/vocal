@@ -21,37 +21,37 @@ depends_on = None
 
 utcnow = f.timezone('UTC', f.now())
 
-ContactMethodType = Enum('email', 'phone', 'address', name='contact_method_type',
+contact_method_type = Enum('email', 'phone', 'address', name='contact_method_type',
                          create_type=False)
 
 def upgrade():
     op.create_extension('pgcrypto')
 
-    ContactMethodType.create(op.get_bind())
+    contact_method_type.create(op.get_bind())
 
     op.create_table(
-        "user_profile",
+        'user_profile',
         Column('user_profile_id', UUID, primary_key=True, server_default=f.gen_random_uuid()),
         Column('display_name', String),
         Column('name', String, nullable=False),
         Column('created_at', DateTime, nullable=False, server_default=utcnow))
 
     op.create_table(
-        "user_auth",
+        'user_auth',
         Column('user_profile_id', UUID, ForeignKey('user_profile.user_profile_id'),
                primary_key=True),
         Column('password_crypt', String, nullable=False))
 
     op.create_table(
-        "contact_method",
+        'contact_method',
         Column('user_profile_id', UUID, ForeignKey('user_profile.user_profile_id'),
                primary_key=True),
         Column('contact_method_id', UUID, primary_key=True, server_default=f.gen_random_uuid()),
-        Column('contact_method_type', ContactMethodType, nullable=False),
+        Column('contact_method_type', contact_method_type, nullable=False),
         Column('verified', Boolean, nullable=False))
 
     op.create_table(
-        "email_contact_method",
+        'email_contact_method',
         Column('user_profile_id', UUID, ForeignKey('user_profile.user_profile_id'),
                primary_key=True),
         Column('contact_method_id', UUID, primary_key=True),
@@ -61,7 +61,7 @@ def upgrade():
                               'contact_method.contact_method_id']))
 
     op.create_table(
-        "phone_contact_method",
+        'phone_contact_method',
         Column('user_profile_id', UUID, ForeignKey('user_profile.user_profile_id'),
                primary_key=True),
         Column('contact_method_id', UUID, primary_key=True),
@@ -71,7 +71,7 @@ def upgrade():
                               'contact_method.contact_method_id']))
 
     op.create_table(
-        "address_contact_method",
+        'address_contact_method',
         Column('user_profile_id', UUID, ForeignKey('user_profile.user_profile_id'),
                primary_key=True),
         Column('contact_method_id', UUID, primary_key=True),
@@ -98,6 +98,6 @@ def downgrade():
     op.drop_table('user_auth')
     op.drop_table('user_profile')
 
-    ContactMethodType.drop(op.get_bind())
+    contact_method_type.drop(op.get_bind())
 
     op.drop_extension('pgcrypto')
