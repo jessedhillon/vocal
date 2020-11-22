@@ -4,10 +4,10 @@ from aiohttp.test_utils import unittest_run_loop as run_loop
 
 from vocal.api.security import Capabilities as caps, _as_values
 
-from . import WebAppTestCase
+from . import BaseTestCase
 
 
-class AuthnTestCase(WebAppTestCase):
+class AuthnTestCase(BaseTestCase):
     @run_loop
     async def test_start_session(self):
         resp = await self.client.request('POST', '/authn/session')

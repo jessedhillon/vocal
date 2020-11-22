@@ -1,25 +1,76 @@
-from aiohttp.test_utils import AioHTTPTestCase as TestCase, unittest_run_loop as run_loop
+from importlib import import_module
+from pathlib import Path
 
-import vocal.api.app as app
+import alembic.config
+import sqlalchemy
+from aiohttp.test_utils import AioHTTPTestCase, setup_test_loop, unittest_run_loop as run_loop
+
+import vocal.api.app
 import vocal.config as config
 import vocal.log
 
 
-class WebAppTestCase(TestCase):
+class BaseTestCase(AioHTTPTestCase):
     appctx = None
 
-    async def get_application(self):
+    def setUp(self):
+        self.loop = setup_test_loop()
+
+        self.loop.run_until_complete(self.setUpAsync())
+        self.app = self.loop.run_until_complete(self.get_application())
+        self.server = self.loop.run_until_complete(self.get_server(self.app))
+        self.client = self.loop.run_until_complete(self.get_client(self.server))
+
+        self.loop.run_until_complete(self.client.start_server())
+
+    async def setUpAsync(self):
         cf = await config.load_config('config/vocal.api', 'test')
         appctx = config.AppConfig('debug', 'config', 'module')
-        self.appctx = appctx
 
         appctx.config.set(cf)
-        appctx.module.set(app)
-        await vocal.log.configure(appctx)
+        appctx.module.set(vocal.api.app)
+
         appctx.debug.set(True)
         assert appctx.ready
 
-        mod = self.appctx.module.get()
+        self.appctx = appctx
 
+    async def get_application(self):
+        await vocal.log.configure(self.appctx)
+
+        mod = self.appctx.module.get()
         await mod.configure(self.appctx)
+
         return await mod.initialize(self.appctx)
+
+
+class DatabaseTestCase(BaseTestCase):
+    async def setUpAsync(self):
+        await super().setUpAsync()
+        self.appctx.declare('alembic_conf')
+
+        config = self.appctx.config.get()
+        dbconf = config['storage']
+
+        connargs = dbconf['connection']
+        connargs.update(config['secrets']['storage'])
+        dsn = sqlalchemy.engine.url.URL.create('postgresql', **connargs)
+
+        # we have to escape ourselves, instead of letting user escape in the conf
+        # because create_async_engine does its own escaping (maybe?)
+        esc = str(dsn).replace('%', '%%')
+
+        base_path = Path(vocal.__file__).parent
+
+        alconf = alembic.config.Config()
+        alconf.set_main_option('script_location', str(base_path / 'migrations'))
+        alconf.set_section_option('alembic', 'sqlalchemy.url', esc)
+        alconf.set_section_option('alembic', 'file_template', '%%(slug)s-%%(rev)s')
+
+        self.appctx.alembic_conf.set(alconf)
+        assert self.appctx.ready
+        alembic.command.upgrade(alconf, 'head')
+
+    def tearDown(self):
+        alconf = self.appctx.alembic_conf.get()
+        alembic.command.downgrade(alconf, 'base')
