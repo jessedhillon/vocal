@@ -73,38 +73,48 @@ def serve(appctx):
 
 @main.group()
 @click.pass_obj
-def database(config):
-    dbconf = config['database']
+def database(appctx):
+    appctx.declare('alembic_conf')
+
+    config = appctx.config.get()
+    dbconf = config['storage']
 
     connargs = dbconf['connection']
-    connargs.update(config['secrets']['database'])
-    dsn = sqlalchemy.engine.url.URL('postgresql', **connargs)
-    escaped = str(dsn).replace('%', '%%')
+    connargs.update(config['secrets']['storage'])
+    dsn = sqlalchemy.engine.url.URL.create('postgresql', **connargs)
+
+    # we have to escape ourselves, instead of letting user escape in the conf
+    # because create_async_engine does its own escaping (maybe?)
+    esc = str(dsn).replace('%', '%%')
 
     alconf = alembic.config.Config()
     alconf.set_main_option('script_location', str(base_path / 'vocal' / 'migrations'))
-    alconf.set_section_option('alembic', 'sqlalchemy.url', escaped)
+    alconf.set_section_option('alembic', 'sqlalchemy.url', esc)
     alconf.set_section_option('alembic', 'file_template', '%%(slug)s-%%(rev)s')
 
-    config['alembic'] = alconf
+    appctx.alembic_conf.set(alconf)
+    assert appctx.ready
 
 
 @database.command()
 @click.argument('revision')
 @click.pass_obj
-def up(config, revision):
-    alembic.command.upgrade(config.pop('alembic'), revision)
+def up(appctx, revision):
+    alconf = appctx.alembic_conf.get()
+    alembic.command.upgrade(alconf, revision)
 
 
 @database.command()
 @click.argument('revision')
 @click.pass_obj
-def down(config, revision):
-    alembic.command.downgrade(config.pop('alembic'), revision)
+def down(appctx, revision):
+    alconf = appctx.alembic_conf.get()
+    alembic.command.downgrade(alconf, revision)
 
 
 @database.command()
 @click.argument('message')
 @click.pass_obj
-def generate(config, message):
-    alembic.command.revision(config.pop('alembic'), message)
+def generate(appctx, message):
+    alconf = appctx.alembic_conf.get()
+    alembic.command.revision(alconf, message)

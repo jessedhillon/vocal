@@ -8,6 +8,7 @@ Create Date: ${create_date}
 from alembic import op
 from sqlalchemy import Column, ForeignKey, ForeignKeyConstraint, Boolean, DateTime, Integer,\
         String, func as f
+from sqlalchemy.dialects.postgresql import ENUM as Enum, JSONB, UUID
 ${imports if imports else ""}
 
 import vocal.util.sqlalchemy
@@ -18,6 +19,8 @@ revision = ${repr(up_revision)}
 down_revision = ${repr(down_revision)}
 branch_labels = ${repr(branch_labels)}
 depends_on = ${repr(depends_on)}
+
+utcnow = f.timezone('UTC', f.now())
 
 
 def upgrade():

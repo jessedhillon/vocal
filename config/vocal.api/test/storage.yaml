@@ -1,7 +1,6 @@
 migrations:
   path: 'vocal:migrations'
 connection:
-  username: jesse
   host: localhost
   port: 5435
-  database: vocal
+  database: vocal_test
