@@ -11,9 +11,8 @@ async def execute(appctx, operations):
     results = []
     engine = appctx.storage.get()
     async with session(appctx) as s:
-        async with s.begin():
-            for op in operations:
-                results.append(await op.execute(s))
+        for op in operations:
+            results.append(await op.execute(s))
     return results
 
 

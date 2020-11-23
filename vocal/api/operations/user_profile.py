@@ -1,5 +1,6 @@
 from enum import Enum
 
+import sqlalchemy.exc
 from sqlalchemy import func as f
 from sqlalchemy.sql.expression import alias, exists, join, literal, select
 
@@ -31,25 +32,28 @@ async def get_user_profile(session, user_profile_id):
         join(email, user_profile.c.user_profile_id == email.c.contact_method_user_profile_id).\
         join(phone, user_profile.c.user_profile_id == phone.c.contact_method_user_profile_id).\
         where(user_profile.c.user_profile_id == user_profile_id))
-    row = rs.one()
-    return UserProfileRecord(user_profile_id=row[0],
-                             display_name=row[1],
-                             created_at=row[2],
-                             name=row[3],
-                             role=row[4],
-                             email_contact_method_id=row[5],
-                             email_contact_method_verified=row[6],
-                             email_address=row[7],
-                             phone_number_contact_method_id=row[8],
-                             phone_number_contact_method_verified=row[9],
-                             phone_number=row[10])
+    try:
+        row = rs.one()
+        return UserProfileRecord(user_profile_id=row[0],
+                                 display_name=row[1],
+                                 created_at=row[2],
+                                 name=row[3],
+                                 role=row[4],
+                                 email_contact_method_id=row[5],
+                                 email_contact_method_verified=row[6],
+                                 email_address=row[7],
+                                 phone_number_contact_method_id=row[8],
+                                 phone_number_contact_method_verified=row[9],
+                                 phone_number=row[10])
+    except sqlalchemy.exc.NoResultFound:
+        return None
 
 
 @operation
 async def create_user_profile(session, display_name, name, password, role, email_address=None,
                               phone_number=None):
     if email_address is None and phone_number is None:
-        raise ValueError('one of email_address or phone_number is required')
+        raise ValueError("one of email address or phone number is required")
 
     r = await session.execute(
         user_profile.\
@@ -86,7 +90,7 @@ async def add_contact_method(session, user_profile_id, email_address=None, phone
         result = await session.execute(q)
         ex = result.scalar()
         if ex:
-            raise ValueError(f"user_profile with email {email_address} already exists")
+            raise ValueError(f"user profile with email {email_address} already exists")
 
         r = await session.execute(
                 contact_method.\
@@ -114,7 +118,7 @@ async def add_contact_method(session, user_profile_id, email_address=None, phone
         result = await session.execute(q)
         ex = result.scalar()
         if ex:
-            raise ValueError(f"user_profile with phone number {phone_number} already exists")
+            raise ValueError(f"user profile with phone number {phone_number} already exists")
 
         r = await session.execute(
                 contact_method.\
