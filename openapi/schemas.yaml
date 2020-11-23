@@ -324,7 +324,7 @@ MailingAddressContactMethod:
 UserProfile:
   type: object
   properties:
-    profileId:
+    userProfileId:
       type: string
       format: uuid
     public:
@@ -371,7 +371,7 @@ UserProfile:
           enum:
             - superuser
             - manager
-            - creator
+            - contributor
             - subscriber
             - member
 MemberProfile:

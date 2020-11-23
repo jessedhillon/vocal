@@ -1,0 +1,2 @@
+class ViewModel(object):
+    pass

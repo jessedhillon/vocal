@@ -1,3 +1,4 @@
+from contextlib import asynccontextmanager
 from functools import partial, wraps
 
 import sqlalchemy.ext.asyncio
@@ -16,6 +17,9 @@ async def execute(appctx, operations):
     return results
 
 
-def session(appctx):
+@asynccontextmanager
+async def session(appctx):
     engine = appctx.storage.get()
-    return sqlalchemy.ext.asyncio.AsyncSession(engine)
+    async with sqlalchemy.ext.asyncio.AsyncSession(engine) as s:
+        async with s.begin():
+            yield s

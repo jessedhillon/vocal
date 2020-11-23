@@ -20,7 +20,7 @@ class ApiOperationsTestCase(DatabaseTestCase):
                 user_profile.UserRole.Subscriber,
                 'jesse@dhillon.com',
                 '+14155551234').execute(session)
-            profile = await op.user_profile.get_user_profile(profile_id).execute(session)
+            rec = await op.user_profile.get_user_profile(profile_id).execute(session)
 
-            assert profile is not None
-            assert profile[0] == profile_id
+            assert rec is not None
+            assert rec.user_profile_id == profile_id
