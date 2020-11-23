@@ -13,10 +13,31 @@ from vocal.api.storage.record import UserProfileRecord
 
 @operation
 async def get_user_profile(session, user_profile_id):
-    email = contact_method.join(email_contact_method).alias()
-    phone = contact_method.join(phone_contact_method).alias()
-    rs = await session.execute(
-        select(
+    # TODO: get this beast to look something like below
+    # select
+    #     prof.name,
+    #     prof.display_name,
+    #     cm1.contact_method_id,
+    #     cm1.contact_method_type,
+    #     cm1.verified,
+    #     e.email_address,
+    #     cm2.contact_method_id,
+    #     cm2.contact_method_type,
+    #     cm2.verified,
+    #     p.phone_number
+    # from user_profile prof
+    # left outer join contact_method cm1 on prof.user_profile_id = cm1.user_profile_id and cm1.contact_method_type = 'email'
+    # left outer join email_contact_method e on
+    #      cm1.user_profile_id = e.user_profile_id and
+    #      cm1.contact_method_id = e.contact_method_id
+    # left outer join contact_method cm2 on prof.user_profile_id = cm2.user_profile_id and cm2.contact_method_type = 'phone'
+    # left outer join phone_contact_method p on
+    #      cm2.user_profile_id = p.user_profile_id and
+    #      cm2.contact_method_id = p.contact_method_id
+
+    email = contact_method.outerjoin(email_contact_method).alias()
+    phone = contact_method.outerjoin(phone_contact_method).alias()
+    q = select(
             user_profile.c.user_profile_id,
             user_profile.c.display_name,
             user_profile.c.created_at,
@@ -29,9 +50,15 @@ async def get_user_profile(session, user_profile_id):
             phone.c.contact_method_verified,
             phone.c.phone_contact_method_phone_number).\
         select_from(user_profile).\
-        join(email, user_profile.c.user_profile_id == email.c.contact_method_user_profile_id).\
-        join(phone, user_profile.c.user_profile_id == phone.c.contact_method_user_profile_id).\
-        where(user_profile.c.user_profile_id == user_profile_id))
+        outerjoin(email,
+                  (user_profile.c.user_profile_id == email.c.contact_method_user_profile_id) &
+                  (email.c.contact_method_contact_method_type == ContactMethodType.Email.value)).\
+        outerjoin(phone,
+                  (user_profile.c.user_profile_id == phone.c.contact_method_user_profile_id) &
+                  (phone.c.contact_method_contact_method_type == ContactMethodType.Phone.value)).\
+        where(user_profile.c.user_profile_id == user_profile_id)
+    rs = await session.execute(q)
+
     try:
         row = rs.one()
         return UserProfileRecord(user_profile_id=row[0],
