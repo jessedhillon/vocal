@@ -7,6 +7,11 @@ AuthnSessionRequest:
         properties:
           principalName:
             type: string
+          principalType:
+            type: string
+            enum:
+              - email
+              - phone
       examples:
         emailPrincipal:
           value:

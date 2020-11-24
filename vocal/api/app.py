@@ -37,4 +37,5 @@ async def initialize(appctx):
     app = Application()
     app.add_routes(appctx.routes.get())
     aiohttp_session.setup(app, appctx.session_store.get())
+    app['appctx'] = appctx
     return app

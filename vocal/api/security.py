@@ -1,6 +1,7 @@
 from enum import Enum
 from functools import wraps
 
+import aiohttp_session
 from aiohttp.web_exceptions import HTTPForbidden
 
 
@@ -25,10 +26,11 @@ def has_capabilities(session, *caps):
 def requires(*capabilities):
     def wrapper(handler):
         @wraps(handler)
-        def f(request, session, *args, **kwargs):
+        async def f(request, *args, **kwargs):
+            session = await aiohttp_session.get_session(request)
             if not has_capabilities(session, *capabilities):
                 raise HTTPForbidden()
             else:
-                return handler(request, session, *args, **kwargs)
+                return await handler(request, *args, **kwargs)
         return f
     return wrapper
