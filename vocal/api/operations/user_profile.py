@@ -12,7 +12,7 @@ from vocal.api.storage.record import UserProfileRecord
 
 
 @operation
-async def get_user_profile(session, user_profile_id):
+async def get_user_profile(session, user_profile_id=None, email_address=None, phone_number=None):
     # TODO: get this beast to look something like below
     # select
     #     prof.name,
@@ -34,29 +34,36 @@ async def get_user_profile(session, user_profile_id):
     # left outer join phone_contact_method p on
     #      cm2.user_profile_id = p.user_profile_id and
     #      cm2.contact_method_id = p.contact_method_id
+    if not any([user_profile_id, email_address, phone_number]):
+        raise ValueError("one of user_profile_id, email_address, phone_number are required")
 
     email = contact_method.outerjoin(email_contact_method).alias()
     phone = contact_method.outerjoin(phone_contact_method).alias()
-    q = select(
-            user_profile.c.user_profile_id,
-            user_profile.c.display_name,
-            user_profile.c.created_at,
-            user_profile.c.name,
-            user_profile.c.role,
-            email.c.contact_method_contact_method_id,
-            email.c.contact_method_verified,
-            email.c.email_contact_method_email_address,
-            phone.c.contact_method_contact_method_id,
-            phone.c.contact_method_verified,
-            phone.c.phone_contact_method_phone_number).\
+    q = select(user_profile.c.user_profile_id,
+               user_profile.c.display_name,
+               user_profile.c.created_at,
+               user_profile.c.name,
+               user_profile.c.role,
+               email.c.contact_method_contact_method_id,
+               email.c.contact_method_verified,
+               email.c.email_contact_method_email_address,
+               phone.c.contact_method_contact_method_id,
+               phone.c.contact_method_verified,
+               phone.c.phone_contact_method_phone_number).\
         select_from(user_profile).\
         outerjoin(email,
                   (user_profile.c.user_profile_id == email.c.contact_method_user_profile_id) &
                   (email.c.contact_method_contact_method_type == ContactMethodType.Email.value)).\
         outerjoin(phone,
                   (user_profile.c.user_profile_id == phone.c.contact_method_user_profile_id) &
-                  (phone.c.contact_method_contact_method_type == ContactMethodType.Phone.value)).\
-        where(user_profile.c.user_profile_id == user_profile_id)
+                  (phone.c.contact_method_contact_method_type == ContactMethodType.Phone.value))
+
+    if user_profile_id is not None:
+        q = q.where(user_profile.c.user_profile_id == user_profile_id)
+    if email_address is not None:
+        q = q.where(email.c.email_contact_method_email_address == email_address)
+    if phone_number is not None:
+        q = q.where(phone.c.phone_contact_method_phone_number == phone_number)
     rs = await session.execute(q)
 
     try:
