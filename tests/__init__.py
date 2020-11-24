@@ -1,16 +1,29 @@
+import asyncio
+from aiohttp.cookiejar import CookieJar
 from importlib import import_module
 from pathlib import Path
+from unittest import TestCase
 
 import alembic.config
 import sqlalchemy
-from aiohttp.test_utils import AioHTTPTestCase, setup_test_loop, unittest_run_loop as run_loop
+from aiohttp.test_utils import AioHTTPTestCase, TestClient, setup_test_loop
 
 import vocal.api.app
 import vocal.config as config
 import vocal.log
+from vocal.util.asyncio import synchronously
 
 
-class BaseTestCase(AioHTTPTestCase):
+class AsyncTestCase(type(TestCase)):
+    def __new__(mcls, name, bases, ns):
+        for attrname, attr in ns.items():
+            if (attrname.startswith('test_') and asyncio.iscoroutinefunction(attr)):
+                ns[attrname] = synchronously(attr)
+
+        return super().__new__(mcls, name, bases, ns)
+
+
+class BaseTestCase(AioHTTPTestCase, metaclass=AsyncTestCase):
     appctx = None
 
     def setUp(self):
@@ -42,6 +55,10 @@ class BaseTestCase(AioHTTPTestCase):
         await mod.configure(self.appctx)
 
         return await mod.initialize(self.appctx)
+
+    async def get_client(self, server):
+        self.cookie_jar = CookieJar(unsafe=True)
+        return TestClient(server, cookie_jar=self.cookie_jar)
 
 
 class DatabaseTestCase(BaseTestCase):

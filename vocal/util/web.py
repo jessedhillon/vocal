@@ -17,7 +17,7 @@ def with_session(handler=None, new=False):
             session = await aiohttp_session.new_session(request)
         else:
             session = await aiohttp_session.get_session(request)
-        return await handler(request, session, *args, **kwargs)
+        return await handler(request, *args, session, **kwargs)
     return f
 
 
@@ -32,10 +32,5 @@ def json_response(handler=None, encoder_cls=JsonEncoder):
         resp = await handler(*args, **kwargs)
         if isinstance(resp, (list, dict, str)):
             return web.json_response(resp, status=200, dumps=encode)
-
-        s = encode(resp.body)
-        resp.body = None
-        resp.text = s
-        resp.content_type = 'application/json'
         return resp
     return f

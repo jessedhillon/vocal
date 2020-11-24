@@ -83,14 +83,14 @@ class AppConfig(object):
     def __getattr__(self, varname):
         _cvars = self.__dict__['_cvars']
         if varname not in _cvars:
-            return KeyError(varname)
+            raise KeyError(varname)
         return _cvars[varname]
 
     def __setattr__(self, varname, v):
         raise RuntimeError()
         _cvars = self.__dict__['_cvars']
         if varname not in _cvars:
-            return KeyError(varname)
+            raise KeyError(varname)
         _cvars[varname].set(v)
 
     def __contains__(self, key):
