@@ -1,7 +1,8 @@
 import dataclasses
+from enum import Enum
 from functools import wraps
 from typing import List
-from enum import Enum
+from uuid import UUID, uuid4
 
 
 class ViewModel(object):
@@ -16,14 +17,13 @@ class ViewModel(object):
     def __post_init__(self):
         for field in dataclasses.fields(self):
             t = field.type
-            if isinstance(t, type):
-                continue
+            v = getattr(self, field.name)
+
             # unmarshall enum or list[enum]
             is_list = False
-            if field.type.__origin__ is list:
+            if hasattr(field.type, '__origin__') and field.type.__origin__ is list:
                 t = t.__args__[0]
                 is_list = True
-            v = getattr(self, field.name)
             if is_list:
                 enum_list = []
                 if issubclass(t, Enum):
@@ -35,7 +35,7 @@ class ViewModel(object):
                     setattr(self, field.name, enum_list)
             else:
                 if issubclass(t, Enum) and isinstance(v, str):
-                    setattr(self, field.name, [t(u) for u in v] if is_list else t(v))
+                    setattr(self, field.name, t(v))
 
 
 def define_view(*fields, name):

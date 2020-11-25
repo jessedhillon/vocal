@@ -160,3 +160,65 @@ async def add_contact_method(session, user_profile_id, email_address=None, phone
         return pn_id
 
     raise ValueError("one of email_address or phone_number is required")
+
+
+@operation
+async def get_contact_method(session, contact_method_id, user_profile_id=None):
+    email = contact_method.alias()
+    phone = contact_method.alias()
+    q = select(contact_method.c.user_profile_id,
+               contact_method.c.contact_method_id,
+               contact_method.c.verified,
+               contact_method.c.contact_method_type,
+               email_contact_method.c.email_address,
+               phone_contact_method.c.phone_number).\
+        select_from(contact_method).\
+        outerjoin(email_contact_method,
+                  (contact_method.c.user_profile_id == email_contact_method.c.user_profile_id) &
+                  (contact_method.c.contact_method_type == ContactMethodType.Email.value)).\
+        outerjoin(phone_contact_method,
+                  (contact_method.c.user_profile_id == phone_contact_method.c.user_profile_id) &
+                  (contact_method.c.contact_method_type == ContactMethodType.Phone.value)).\
+        where(contact_method.c.contact_method_id == contact_method_id)
+
+    if user_profile_id is None:
+        q = q.where(contact_method.c.user_profile_id == user_profile_id)
+
+    rs = await session.execute(q)
+    try:
+        cm = rs.one()
+        cmtype = ContactMethodType(cm[3])
+        if cmtype is ContactMethodType.Phone:
+            return PhoneContactMethodRecord(user_profile_id=cm[0],
+                                            contact_method_id=cm[1],
+                                            contact_method_type=ContactMethodType.Phone,
+                                            verified=cm[2],
+                                            phone_number=cm[5])
+        elif cmtype is ContactMethodType.Email:
+            return EmailContactMethodRecord(user_profile_id=cm[0],
+                                            contact_method_id=cm[1],
+                                            contact_method_type=ContactMethodType.Email,
+                                            verified=cm[2],
+                                            email_address=cm[4])
+        raise ValueError(cmtype)
+    except sqlalchemy.exc.NoResultFound:
+        return None
+
+
+@operation
+async def mark_contact_method_verified(session, contact_method_id, user_profile_id=None):
+    u = contact_method.\
+        update().\
+        values(verified=True).\
+        where(contact_method.c.contact_method_id == contact_method_id).\
+        where(contact_method.c.verified == False)
+
+    if user_profile_id is not None:
+        u = u.where(contact_method.c.user_profile_id == user_profile_id)
+
+    rs = await session.execute(u)
+    c = rs.rowcount
+    if c == 0:
+        raise ValueError(
+            f"no unverified contact method exists with contact_method_id {contact_method_id!s}")
+    return c

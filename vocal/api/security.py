@@ -5,6 +5,9 @@ import aiohttp_session
 from aiohttp.web_exceptions import HTTPForbidden
 
 
+MaxVerificationChallengeAttempts = 3
+
+
 class Capabilities(Enum):
     Authenticate = 'authn'
 
@@ -19,8 +22,9 @@ def add_capabilities(session, *caps):
 
 
 def has_capabilities(session, *caps):
-    caps = _as_values(caps)
-    return session.setdefault('capabilities', []) and set(session['capabilities']) <= set(caps)
+    caps = set(_as_values(caps))
+    scaps = set(session.setdefault('capabilities', []))
+    return caps <= scaps
 
 
 def requires(*capabilities):

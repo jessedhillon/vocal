@@ -7,6 +7,14 @@ import aiohttp.web as web
 from .json import JsonEncoder
 
 
+def with_context(handler):
+    @wraps(handler)
+    async def f(request, *args, **kwargs):
+        ctx = request.app['appctx']
+        return await handler(request, *args, ctx, **kwargs)
+    return f
+
+
 def with_session(handler=None, new=False):
     if handler is None:
         return partial(with_session, new=new)

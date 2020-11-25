@@ -22,7 +22,7 @@ def message(handler):
         except ValueError as e:
             resp = e
 
-        if isinstance(resp, (list, dict, str, ViewModel)):
+        if isinstance(resp, (type(None), list, dict, str, ViewModel)):
             return {
                 'status': {
                     'success': True,

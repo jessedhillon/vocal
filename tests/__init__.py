@@ -60,6 +60,14 @@ class BaseTestCase(AioHTTPTestCase, metaclass=AsyncTestCase):
         self.cookie_jar = CookieJar(unsafe=True)
         return TestClient(server, cookie_jar=self.cookie_jar)
 
+    def has_cookie(self, cookie_name):
+        return cookie_name in self.cookie_jar._cookies['127.0.0.1']
+
+    def get_cookie(self, cookie_name):
+        if not self.has_cookie(cookie_name):
+            raise KeyError(cookie_name)
+        return self.cookie_jar._cookies['127.0.0.1'][cookie_name]
+
 
 class DatabaseTestCase(BaseTestCase):
     async def setUpAsync(self):
