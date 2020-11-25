@@ -8,62 +8,49 @@ from vocal.api.models.user_profile import UserRole, ContactMethodType
 from vocal.api.util import operation
 from vocal.api.storage.sql import user_profile, user_auth, contact_method, email_contact_method,\
         phone_contact_method, contact_method_type, user_role
-from vocal.api.storage.record import UserProfileRecord
+from vocal.api.storage.record import UserProfileRecord, EmailContactMethodRecord,\
+        PhoneContactMethodRecord
 
 
 @operation
 async def get_user_profile(session, user_profile_id=None, email_address=None, phone_number=None):
-    # TODO: get this beast to look something like below
-    # select
-    #     prof.name,
-    #     prof.display_name,
-    #     cm1.contact_method_id,
-    #     cm1.contact_method_type,
-    #     cm1.verified,
-    #     e.email_address,
-    #     cm2.contact_method_id,
-    #     cm2.contact_method_type,
-    #     cm2.verified,
-    #     p.phone_number
-    # from user_profile prof
-    # left outer join contact_method cm1 on prof.user_profile_id = cm1.user_profile_id and cm1.contact_method_type = 'email'
-    # left outer join email_contact_method e on
-    #      cm1.user_profile_id = e.user_profile_id and
-    #      cm1.contact_method_id = e.contact_method_id
-    # left outer join contact_method cm2 on prof.user_profile_id = cm2.user_profile_id and cm2.contact_method_type = 'phone'
-    # left outer join phone_contact_method p on
-    #      cm2.user_profile_id = p.user_profile_id and
-    #      cm2.contact_method_id = p.contact_method_id
     if not any([user_profile_id, email_address, phone_number]):
         raise ValueError("one of user_profile_id, email_address, phone_number are required")
 
-    email = contact_method.outerjoin(email_contact_method).alias()
-    phone = contact_method.outerjoin(phone_contact_method).alias()
+    email = contact_method.alias()
+    phone = contact_method.alias()
     q = select(user_profile.c.user_profile_id,
                user_profile.c.display_name,
                user_profile.c.created_at,
                user_profile.c.name,
                user_profile.c.role,
-               email.c.contact_method_contact_method_id,
-               email.c.contact_method_verified,
-               email.c.email_contact_method_email_address,
-               phone.c.contact_method_contact_method_id,
-               phone.c.contact_method_verified,
-               phone.c.phone_contact_method_phone_number).\
+               email.c.contact_method_id,
+               email.c.verified,
+               email_contact_method.c.email_address,
+               phone.c.contact_method_id,
+               phone.c.verified,
+               phone_contact_method.c.phone_number).\
         select_from(user_profile).\
         outerjoin(email,
-                  (user_profile.c.user_profile_id == email.c.contact_method_user_profile_id) &
-                  (email.c.contact_method_contact_method_type == ContactMethodType.Email.value)).\
+                  (user_profile.c.user_profile_id == email.c.user_profile_id) &
+                  (email.c.contact_method_type == ContactMethodType.Email.value)).\
         outerjoin(phone,
-                  (user_profile.c.user_profile_id == phone.c.contact_method_user_profile_id) &
-                  (phone.c.contact_method_contact_method_type == ContactMethodType.Phone.value))
+                  (user_profile.c.user_profile_id == phone.c.user_profile_id) &
+                  (phone.c.contact_method_type == ContactMethodType.Phone.value)).\
+        outerjoin(email_contact_method,
+                  (email.c.user_profile_id == email_contact_method.c.user_profile_id) &
+                  (email.c.contact_method_id == email_contact_method.c.contact_method_id)).\
+        outerjoin(phone_contact_method,
+                  (phone.c.user_profile_id == phone_contact_method.c.user_profile_id) &
+                  (phone.c.contact_method_id == phone_contact_method.c.contact_method_id))
 
     if user_profile_id is not None:
         q = q.where(user_profile.c.user_profile_id == user_profile_id)
     if email_address is not None:
-        q = q.where(email.c.email_contact_method_email_address == email_address)
+        q = q.where(email_contact_method.c.email_address == email_address)
     if phone_number is not None:
-        q = q.where(phone.c.phone_contact_method_phone_number == phone_number)
+        q = q.where(phone_contact_method.c.phone_number == phone_number)
+
     rs = await session.execute(q)
 
     try:
