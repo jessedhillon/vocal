@@ -1,16 +1,16 @@
 from cryptography.fernet import Fernet
 from uuid import uuid4
 
-from aiohttp.web import HTTPUnauthorized, Response, json_response
-
-from vocal.util.web import with_context, with_session, json_response
+from aiohttp.web import HTTPAccepted, HTTPBadRequest, HTTPUnauthorized, Response, json_response
 
 import vocal.api.operations as op
 import vocal.api.security as security
 import vocal.api.util as util
-from vocal.api.models.authn import AuthnSession, AuthnChallenge, AuthnChallengeType
+from vocal.api.models.authn import AuthnSession, AuthnChallenge, AuthnChallengeResponse,\
+        AuthnChallengeType
 from vocal.api.models.user_profile import UserRole
 from vocal.api.security import Capabilities as caps
+from vocal.util.web import with_context, with_session, json_response
 
 
 @json_response
@@ -43,7 +43,7 @@ async def init_authn_session(request, session, ctx):
 
     sk = uuid4()
     authn_session = AuthnSession(session_id=sk, user_profile_id=u.user_profile_id,
-                                 require_challenges=challenge_types, active_challenge_id=None)
+                                 require_challenges=challenge_types)
 
     security.add_capabilities(session, caps.Authenticate)
     session['authn_session'] = authn_session.as_dict()
@@ -58,8 +58,11 @@ async def init_authn_session(request, session, ctx):
 @with_context
 @security.requires(caps.Authenticate)
 async def get_authn_challenge(request, session, ctx):
+    authn_session = AuthnSession(**session['authn_session'])
+    if 'authn_challenge' in session:
+        raise HTTPBadRequest()
+
     async with op.session(ctx) as ss:
-        authn_session = AuthnSession(**session['authn_session'])
         u = await op.user_profile.\
             get_user_profile(user_profile_id=authn_session.user_profile_id).\
             execute(ss)
@@ -67,34 +70,60 @@ async def get_authn_challenge(request, session, ctx):
         if authn_session.require_challenges:
             chtype = authn_session.require_challenges.pop(0)
 
-            if chtype is AuthnChallengeType.Email:
-                secret = util.generate_otp()
-                hint = util.mask_email(u.email_address)
-                if u.email_contact_method_verified:
-                    pass
-                    # TODO: deliver challenge
-                else:
-                    raise ValueError(f"email {hint} must be verified first")
-
-            elif chtype is AuthnChallengeType.SMS:
-                secret = util.generate_otp()
-                hint = util.mask_email(u.phone_number)
-                if u.phone_contact_method_verified:
-                    # TODO: deliver challenge
-                    pass
-                else:
-                    raise ValueError("phone {hint} must be verified first")
-
-            elif chtype is AuthnChallengeType.Password:
-                secret = None
-                hint = None
-
-            challenge_id = uuid4()
-            challenge = AuthnChallenge(challenge_id=challenge_id, challenge_type=chtype,
-                                       hint=hint, secret=secret)
-            authn_session.active_challenge_id = challenge.challenge_id
+            challenge = AuthnChallenge.create_challenge_for_user(u, chtype)
             session['authn_session'] = authn_session
             session['authn_challenge'] = challenge
-            session.changed()
+
+            # TODO: deliver challenge
 
             return challenge.get_view('public')
+
+
+@json_response
+@util.message
+@with_session
+@with_context
+@security.requires(caps.Authenticate)
+async def verify_authn_challenge(request, session, ctx):
+    if 'authn_challenge' not in session:
+        raise HTTPBadRequest()
+
+    authn_session = AuthnSession(**session['authn_session'])
+    authn_challenge = AuthnChallenge(**session['authn_challenge'])
+    challenge_response = AuthnChallengeResponse(**await request.json())
+
+    if challenge_response.challenge_id != authn_challenge.challenge_id:
+        raise HTTPBadRequest()
+
+    authn_challenge.attempts += 1
+    if authn_challenge.attempts > security.MaxVerificationChallengeAttempts:
+        session.pop('authn_challenge')
+        session.pop('authn_session')
+        raise HTTPForbidden(text="Too many invalid attempts")
+
+    otp_types = [AuthnChallengeType.Email, AuthnChallengeType.SMS]
+    if authn_challenge.challenge_type in otp_types:
+        if challenge_response.passcode != authn_challenge.secret:
+            session['authn_challenge'] = authn_challenge
+            raise HTTPUnauthorized(text="Incorrect passcode")
+    elif authn_challenge.challenge_type is AuthnChallengeType.Password:
+        # TODO: implement this
+        raise NotImplementedError()
+    else:
+        raise HTTPBadRequest()
+
+    session.pop('authn_challenge')
+    if authn_session.require_challenges:
+        async with op.session(ctx) as ss:
+            u = await op.user_profile.\
+                get_user_profile(user_profile_id=authn_session.user_profile_id).\
+                execute(ss)
+
+        next_chtype = authn_session.require_challenges.pop(0)
+        next_challenge = AuthnChallengeResponse.create_challenge_for_user(u, next_chtype)
+        session['authn_challenge'] = next_challenge
+        return HTTPAccepted(text=next_challenge.get_view('public'))
+    else:
+        security.add_capabilities(session, caps.ProfileList)
+        security.remove_capabilities(session, caps.Authenticate)
+        return None

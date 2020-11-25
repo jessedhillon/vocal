@@ -9,6 +9,7 @@ async def configure(appctx):
         # authn
         RouteDef('POST', '/authn/session', authn.init_authn_session, kwargs={}),
         RouteDef('GET', '/authn/challenge', authn.get_authn_challenge, kwargs={}),
+        RouteDef('POST', '/authn/challenge', authn.verify_authn_challenge, kwargs={}),
 
         # user
         RouteDef('GET', '/users/{user_profile_id}/contactMethods/{contact_method_id}/verify',

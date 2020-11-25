@@ -10,6 +10,7 @@ MaxVerificationChallengeAttempts = 3
 
 class Capabilities(Enum):
     Authenticate = 'authn'
+    ProfileList = 'profile.list'
 
 
 def _as_values(caps):
@@ -18,6 +19,13 @@ def _as_values(caps):
 
 def add_capabilities(session, *caps):
     session['capabilities'] = set(session.setdefault('capabilities', [])) | set(caps)
+    session.changed()
+
+
+def remove_capabilities(session, *caps):
+    caps = set(_as_values(caps))
+    scaps = set(session.setdefault('capabilities', []))
+    session['capabilities'] = set(scaps) - set(caps)
     session.changed()
 
 

@@ -32,8 +32,12 @@ def message(handler):
                 'data': resp,
             }
         elif isinstance(resp, (Response, HTTPException)):
+            errors = []
+            obj = None
             if isinstance(resp, HTTPException):
-                obj = None
+                errors.append(resp.text)
+                if not isinstance(resp.body, (str, bytes)):
+                    obj = resp.body
             else:
                 obj = resp.body or resp.data
             phrase = HTTPStatus(resp.status)
@@ -42,7 +46,7 @@ def message(handler):
                 'status': {
                     'success': success,
                     'message': resp.reason,
-                    'errors': [],
+                    'errors': errors,
                 },
                 'data': obj,
             }

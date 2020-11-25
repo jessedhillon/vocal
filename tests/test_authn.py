@@ -57,3 +57,56 @@ class AuthnTestCase(DatabaseTestCase):
         j = await resp.json()
         assert resp.status == 400
         assert "email j****@dhillon.com must be verified first" in j['status']['errors']
+
+    async def test_get_authn_challenge(self):
+        async with op.session(self.appctx) as session:
+            profile_id = await op.user_profile.\
+                create_user_profile('Jesse',
+                                    'Jesse Dhillon',
+                                    '123foobar^#@',
+                                    user_profile.UserRole.Subscriber,
+                                    'jesse@dhillon.com',
+                                    '+14155551234').\
+                execute(session)
+            profile = await op.user_profile.\
+                get_user_profile(user_profile_id=profile_id).\
+                execute(session)
+            await op.user_profile.\
+                mark_contact_method_verified(contact_method_id=profile.email_contact_method_id).\
+                execute(session)
+
+        body = {
+            'principalName': 'jesse@dhillon.com',
+            'principalType': 'email',
+        }
+        await self.client.request('POST', '/authn/session', json=body)
+        await self.client.request('GET', '/authn/challenge')
+
+        cookie = json.loads(self.get_cookie('TEST_SESSION').value)
+        session = cookie['session']
+        assert 'authn_challenge' in session
+
+        challenge = session['authn_challenge']
+        chresp = {
+            'challenge_id': challenge['challenge_id'],
+            'passcode': challenge['secret'],
+        }
+        resp = await self.client.request('POST', '/authn/challenge',
+                                         json={**chresp, 'passcode': 'foobar'})
+        assert resp.status == 401
+        j = await resp.json()
+        assert not j['status']['success']
+        assert 'Incorrect passcode' in j['status']['errors']
+
+        cookie = json.loads(self.get_cookie('TEST_SESSION').value)
+        challenge = cookie['session']['authn_challenge']
+        assert challenge['attempts'] == 1
+
+        resp = await self.client.request('POST', '/authn/challenge', json=chresp)
+        cookie = json.loads(self.get_cookie('TEST_SESSION').value)
+        session = cookie['session']
+        assert set(session['capabilities']) == set(['profile.list'])
+        assert resp.status == 200
+
+        resp = await self.client.request('POST', '/authn/challenge', json=chresp)
+        assert resp.status == 403

@@ -134,6 +134,8 @@ paths:
       security:
         - sessionCookie:
           - profile.list
+        - sessionCookie:
+          - authn
       summary: Request `UserProfile` contact method verification
       operationId: getUserProfileContactMethodVerificationChallenge
       parameters:
