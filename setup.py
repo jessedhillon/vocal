@@ -26,6 +26,6 @@ setup(name='vocal',
       ],
       entry_points={
           'console_scripts': [
-              'vocal=vocal.cli:main'
+              'vocal-cli=vocal.cli:main'
           ]
       })
