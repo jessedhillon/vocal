@@ -2,7 +2,7 @@ from enum import Enum
 
 import sqlalchemy.exc
 from sqlalchemy import func as f
-from sqlalchemy.sql.expression import alias, exists, join, literal, select
+from sqlalchemy.sql.expression import alias, exists, false, join, literal, select, true
 
 from vocal.api.models.user_profile import UserRole, ContactMethodType
 from vocal.api.util import operation
@@ -77,21 +77,20 @@ async def create_user_profile(session, display_name, name, password, role, email
         raise ValueError("one of email address or phone number is required")
 
     r = await session.execute(
-        user_profile.\
-            insert().\
-            values(
-                name=name,
-                display_name=display_name,
-                role=role.value).\
-            returning(user_profile.c.user_profile_id))
+        user_profile.
+        insert().
+        values(name=name,
+               display_name=display_name,
+               role=role.value).
+        returning(user_profile.c.user_profile_id))
     profile_id = r.scalar()
 
     await session.execute(
-        user_auth.\
-            insert().\
-            values(
-                user_profile_id=profile_id,
-                password_crypt=f.crypt(password, f.gen_salt('bf', 8))))
+        user_auth.
+        insert().
+        values(
+            user_profile_id=profile_id,
+            password_crypt=f.crypt(password, f.gen_salt('bf', 8))))
 
     if email_address is not None:
         await add_contact_method(profile_id, email_address=email_address).execute(session)
@@ -114,21 +113,19 @@ async def add_contact_method(session, user_profile_id, email_address=None, phone
             raise ValueError(f"user profile with email {email_address} already exists")
 
         r = await session.execute(
-                contact_method.\
-                    insert().\
-                    values(
-                        user_profile_id=user_profile_id,
-                        contact_method_type=ContactMethodType.Email.value,
-                        verified=False).\
-                    returning(contact_method.c.contact_method_id))
+            contact_method.
+            insert().
+            values(user_profile_id=user_profile_id,
+                   contact_method_type=ContactMethodType.Email.value,
+                   verified=False).
+            returning(contact_method.c.contact_method_id))
         email_id = r.scalar()
         await session.execute(
-            email_contact_method.\
-                insert().\
-                values(
-                    user_profile_id=user_profile_id,
-                    contact_method_id=email_id,
-                    email_address=email_address))
+            email_contact_method.
+            insert().
+            values(user_profile_id=user_profile_id,
+                   contact_method_id=email_id,
+                   email_address=email_address))
         return email_id
 
     elif phone_number is not None:
@@ -142,21 +139,19 @@ async def add_contact_method(session, user_profile_id, email_address=None, phone
             raise ValueError(f"user profile with phone number {phone_number} already exists")
 
         r = await session.execute(
-                contact_method.\
-                    insert().\
-                    values(
-                        user_profile_id=user_profile_id,
-                        contact_method_type=ContactMethodType.Phone.value,
-                        verified=False).\
-                    returning(contact_method.c.contact_method_id))
+                contact_method.
+                insert().
+                values(user_profile_id=user_profile_id,
+                       contact_method_type=ContactMethodType.Phone.value,
+                       verified=False).
+                returning(contact_method.c.contact_method_id))
         pn_id = r.scalar()
         await session.execute(
-            phone_contact_method.\
-                insert().\
-                values(
-                    user_profile_id=user_profile_id,
-                    contact_method_id=pn_id,
-                    phone_number=phone_number))
+            phone_contact_method.
+            insert().
+            values(user_profile_id=user_profile_id,
+                   contact_method_id=pn_id,
+                   phone_number=phone_number))
         return pn_id
 
     raise ValueError("one of email_address or phone_number is required")
@@ -211,7 +206,7 @@ async def mark_contact_method_verified(session, contact_method_id, user_profile_
         update().\
         values(verified=True).\
         where(contact_method.c.contact_method_id == contact_method_id).\
-        where(contact_method.c.verified == False)
+        where(contact_method.c.verified == false())
 
     if user_profile_id is not None:
         u = u.where(contact_method.c.user_profile_id == user_profile_id)

@@ -33,7 +33,8 @@ def json_response(handler=None, encoder_cls=JsonEncoder):
     if handler is None:
         return partial(json_response, encoder_cls=encoder_cls)
 
-    encode = lambda obj: json.dumps(obj, cls=encoder_cls)
+    def encode(obj):
+        return json.dumps(obj, cls=encoder_cls)
 
     @wraps(handler)
     async def f(*args, **kwargs):

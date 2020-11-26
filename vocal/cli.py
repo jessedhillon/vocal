@@ -17,6 +17,7 @@ from vocal.util.asyncio import synchronously
 
 base_path = Path(__file__).parent.parent
 
+
 @click.group()
 @click.option('-D', '--debug', is_flag=True, default=False)
 @click.option('-C', '--config_path', default=None)
@@ -44,7 +45,7 @@ async def main(loop, ctx, debug, config_path, env, app_path):
         if debug:
             logger.info('debugging mode enabled')
         assert appctx.ready
-    except:
+    except Exception:
         if debug:
             traceback.print_exc()
             pdb.post_mortem()

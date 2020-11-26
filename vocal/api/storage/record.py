@@ -18,6 +18,16 @@ class UserProfileRecord:
     phone_number_contact_method_id: str
     phone_number_contact_method_verified: bool
     phone_number: str
+    # billing_address_contact_method_id: str
+    # country_code: str
+    # administrative_area: str
+    # locality: str
+    # dependent_locality: str
+    # postal_code: str
+    # sorting_code: str
+    # address_2: str
+    # address_1: str
+    # organization: str
 
 
 @dataclass(frozen=True)

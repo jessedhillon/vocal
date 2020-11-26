@@ -23,7 +23,8 @@ depends_on = None
 utcnow = f.timezone('UTC', f.now())
 
 user_role = Enum('superuser', 'manager', 'creator', 'member', 'subscriber', name='user_role',
-                create_type=False)
+                 create_type=False)
+
 
 def upgrade():
     user_role.create(op.get_bind())

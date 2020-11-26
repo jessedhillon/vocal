@@ -56,11 +56,11 @@ class UserProfileOperationsTestCase(DatabaseTestCase):
 
         async with op.session(self.appctx) as session:
             p1 = await op.user_profile.\
-                    get_user_profile(email_address='alice@example.com').\
-                    execute(session)
+                get_user_profile(email_address='alice@example.com').\
+                execute(session)
             p2 = await op.user_profile.\
-                    get_user_profile(phone_number='+14155551234').\
-                    execute(session)
+                get_user_profile(phone_number='+14155551234').\
+                execute(session)
             assert p1.user_profile_id == ag.user_profile_id
             assert p2.user_profile_id == jd.user_profile_id
 

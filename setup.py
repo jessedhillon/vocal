@@ -10,7 +10,6 @@ setup(name='vocal',
       author="Jesse Dhillon",
       author_email="jesse@dhillon.com",
       url="https://vocal.social/",
-      test_suite='tests',
       install_requires=[
           'aiohttp[speedups]==3.7.2',
           'aiohttp_session[secure]==2.9.0',
@@ -21,9 +20,17 @@ setup(name='vocal',
           'colorlog==4.6.2',
           'jinja2==2.11.2',
           'PyYAML==5.3.1',
+      ],
+      tests_require=[
           'pytest==6.1.2',
           'pytest-aiohttp==0.3.0',
       ],
+      test_suite='pytest',
+      extras_require={
+          'dev': [
+              'pycodetest==2.6.0',
+          ],
+      },
       entry_points={
           'console_scripts': [
               'vocal-cli=vocal.cli:main'

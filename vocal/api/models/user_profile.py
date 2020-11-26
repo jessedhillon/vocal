@@ -96,5 +96,5 @@ class UserProfile(ViewModel):
             user_profile_id=rec.user_profile_id,
             auth=cls._auth(password=None, role=UserRole(rec.role)),
             public=cls._public(display_name=rec.display_name, created_at=rec.created_at),
-            private=cls._private(name=rec.name, email_address=email, phone_number=phone,\
+            private=cls._private(name=rec.name, email_address=email, phone_number=phone,
                                  billing_address=None))

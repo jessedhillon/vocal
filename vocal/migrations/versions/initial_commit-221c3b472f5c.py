@@ -1,7 +1,7 @@
 """initial commit
 
 Revision ID: 221c3b472f5c
-Revises: 
+Revises:
 Create Date: 2020-11-17 10:41:26.931244
 
 """
@@ -22,7 +22,8 @@ depends_on = None
 utcnow = f.timezone('UTC', f.now())
 
 contact_method_type = Enum('email', 'phone', 'address', name='contact_method_type',
-                         create_type=False)
+                           create_type=False)
+
 
 def upgrade():
     op.create_extension('pgcrypto')
