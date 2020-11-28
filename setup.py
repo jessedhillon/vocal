@@ -11,9 +11,11 @@ setup(name='vocal',
       author_email="jesse@dhillon.com",
       url="https://vocal.social/",
       install_requires=[
+          'async-timeout<4.0.0',
+          'asyncpg==0.21.0',
+          'aiohttp==3.7.2',
           'aiohttp[speedups]==3.7.2',
           'aiohttp_session[secure]==2.9.0',
-          'aiopg==1.0.0',
           'aioredis==1.3.1',
           'alembic==1.4.3',
           'click==7.1.2',
@@ -28,7 +30,7 @@ setup(name='vocal',
       test_suite='pytest',
       extras_require={
           'dev': [
-              'pycodetest==2.6.0',
+              'pycodestyle==2.6.0',
           ],
       },
       entry_points={

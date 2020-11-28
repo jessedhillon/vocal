@@ -1,7 +1,6 @@
 import dataclasses
 from enum import Enum
-from functools import wraps
-from typing import List
+from types import GenericAlias
 from uuid import UUID, uuid4
 
 
@@ -21,7 +20,7 @@ class ViewModel(object):
 
             # unmarshall enum or list[enum]
             is_list = False
-            if hasattr(field.type, '__origin__') and field.type.__origin__ is list:
+            if isinstance(field.type, GenericAlias) and field.type.__origin__ is list:
                 t = t.__args__[0]
                 is_list = True
             if is_list:

@@ -1,6 +1,5 @@
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import List
 from uuid import UUID, uuid4
 
 import vocal.api.security as security
@@ -57,4 +56,4 @@ class AuthnChallengeResponse(ViewModel):
 class AuthnSession(ViewModel):
     session_id: UUID
     user_profile_id: UUID
-    require_challenges: List[AuthnChallengeType]
+    require_challenges: list[AuthnChallengeType]
