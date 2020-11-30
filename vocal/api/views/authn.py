@@ -1,4 +1,3 @@
-from cryptography.fernet import Fernet
 from uuid import uuid4
 
 from aiohttp.web import HTTPAccepted, HTTPBadRequest, HTTPUnauthorized, Response, json_response

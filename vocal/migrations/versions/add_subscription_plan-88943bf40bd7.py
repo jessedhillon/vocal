@@ -27,7 +27,7 @@ subscription_plan_status = Enum('active', 'inactive', name='subscription_plan_st
                                 create_type=False)
 payment_demand_type = Enum('periodic', 'immediate', 'pay-go', name='payment_demand_type',
                            create_type=False)
-payment_demand_period = Enum('daily', 'weekly', 'monthly', 'quarterly', 'yearly',
+payment_demand_period = Enum('daily', 'weekly', 'monthly', 'quarterly', 'annually',
                              name='payment_demand_period', create_type=False)
 
 

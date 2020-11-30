@@ -1,5 +1,5 @@
 from sqlalchemy import Column, ForeignKey, ForeignKeyConstraint, Boolean, DateTime, Integer,\
-        String, func as f, MetaData
+        Numeric, String, func as f, MetaData
 from sqlalchemy.dialects.postgresql import ENUM as Enum, JSONB, UUID
 from sqlalchemy.schema import Table
 
@@ -9,7 +9,12 @@ contact_method_type = Enum('email', 'phone', 'address', name='contact_method_typ
                            create_type=False)
 user_role = Enum('superuser', 'manager', 'creator', 'member', 'subscriber', name='user_role',
                  create_type=False)
-
+subscription_plan_status = Enum('active', 'inactive', name='subscription_plan_status',
+                                create_type=False)
+payment_demand_type = Enum('periodic', 'immediate', 'pay-go', name='payment_demand_type',
+                           create_type=False)
+payment_demand_period = Enum('daily', 'weekly', 'monthly', 'quarterly', 'annually',
+                             name='payment_demand_period', create_type=False)
 utcnow = f.timezone('UTC', f.now())
 
 user_profile = Table(
@@ -70,3 +75,47 @@ address_contact_method = Table(
     Column('name', String, nullable=False),
     ForeignKeyConstraint(['user_profile_id', 'contact_method_id'],
                          ['contact_method.user_profile_id', 'contact_method.contact_method_id']))
+
+subscription_plan = Table(
+    'subscription_plan',
+    metadata,
+    Column('subscription_plan_id', UUID, primary_key=True, server_default=f.gen_random_uuid()),
+    Column('status', subscription_plan_status, nullable=False, server_default='active'),
+    Column('rank', Integer),
+    Column('name', String),
+    Column('description', String, nullable=False))
+
+payment_demand = Table(
+    'payment_demand',
+    metadata,
+    Column('subscription_plan_id', UUID, ForeignKey('subscription_plan.subscription_plan_id'),
+           primary_key=True),
+    Column('payment_demand_id', UUID, primary_key=True, server_default=f.gen_random_uuid()),
+    Column('demand_type', payment_demand_type, nullable=False))
+
+periodic_payment_demand = Table(
+    'periodic_payment_demand',
+    metadata,
+    Column('subscription_plan_id', UUID, ForeignKey('subscription_plan.subscription_plan_id'),
+           primary_key=True),
+    Column('payment_demand_id', UUID, primary_key=True),
+    Column('period', payment_demand_period, nullable=False),
+    Column('iso_currency', String(3)),
+    Column('non_iso_currency', String),
+    Column('amount', Numeric(20, 6), nullable=False),
+    ForeignKeyConstraint(['subscription_plan_id', 'payment_demand_id'],
+                         ['payment_demand.subscription_plan_id',
+                          'payment_demand.payment_demand_id']))
+
+immediate_payment_demand = Table(
+    'immediate_payment_demand',
+    metadata,
+    Column('subscription_plan_id', UUID, ForeignKey('subscription_plan.subscription_plan_id'),
+           primary_key=True),
+    Column('payment_demand_id', UUID, primary_key=True),
+    Column('iso_currency', String(3)),
+    Column('non_iso_currency', String),
+    Column('amount', Numeric(20, 6), nullable=False),
+    ForeignKeyConstraint(['subscription_plan_id', 'payment_demand_id'],
+                         ['payment_demand.subscription_plan_id',
+                          'payment_demand.payment_demand_id']))
