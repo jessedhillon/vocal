@@ -8,10 +8,8 @@ from uuid import UUID
 from sqlalchemy.engine.result import Result
 from sqlalchemy.engine.row import Row
 
-from vocal.api.models.membership import SubscriptionPlanStatus, PaymentDemandType,\
-        PeriodicPaymentDemandPeriod
-from vocal.api.models.user_profile import ContactMethodType, UserRole
-from vocal.api.models.payment import ISO4217Currency
+from vocal.api.constants import ContactMethodType, ISO4217Currency, SubscriptionPlanStatus,\
+        PaymentDemandType, PeriodicPaymentDemandPeriod, UserRole
 
 
 class BaseRecord(object):

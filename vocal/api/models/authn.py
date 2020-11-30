@@ -1,18 +1,11 @@
 from dataclasses import dataclass, field
-from enum import Enum
 from uuid import UUID, uuid4
 
 import vocal.api.security as security
 import vocal.api.util as util
+from vocal.api.constants import AuthnChallengeType
 
 from .base import define_view, ViewModel
-
-
-class AuthnChallengeType(Enum):
-    Password = 'password'
-    Email = 'email'
-    SMS = 'sms'
-    OTP = 'otp'
 
 
 @dataclass

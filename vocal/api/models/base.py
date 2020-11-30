@@ -3,6 +3,8 @@ from enum import Enum
 from types import GenericAlias
 from uuid import UUID, uuid4
 
+from vocal.api.storage import BaseRecord
+
 
 class ViewModel(object):
     def as_dict(self):

@@ -5,9 +5,8 @@ from aiohttp.web import HTTPBadRequest, HTTPForbidden
 import vocal.api.operations as op
 import vocal.api.security as security
 import vocal.api.util as util
-from vocal.api.models.authn import AuthnChallenge, AuthnChallengeResponse, AuthnSession,\
-    AuthnChallengeType
-from vocal.api.models.user_profile import ContactMethodType
+from vocal.api.constants import AuthnChallengeType, ContactMethodType
+from vocal.api.models.authn import AuthnChallenge, AuthnChallengeResponse, AuthnSession
 from vocal.api.security import Capabilities as caps
 from vocal.util.web import with_context, with_session, json_response
 

@@ -1,6 +1,7 @@
 import json
 
 import vocal.api.operations as op
+from vocal.api.constants import UserRole
 from vocal.api.models import user_profile
 from vocal.api.security import Capabilities as caps, _as_values
 
@@ -14,7 +15,7 @@ class AuthnTestCase(DatabaseTestCase):
                 'Jesse',
                 'Jesse Dhillon',
                 '123foobar^#@',
-                user_profile.UserRole.Subscriber,
+                UserRole.Subscriber,
                 'jesse@dhillon.com',
                 '+14155551234').execute(session)
 
@@ -40,7 +41,7 @@ class AuthnTestCase(DatabaseTestCase):
                 'Jesse',
                 'Jesse Dhillon',
                 '123foobar^#@',
-                user_profile.UserRole.Subscriber,
+                UserRole.Subscriber,
                 'jesse@dhillon.com',
                 '+14155551234').execute(session)
 
@@ -64,7 +65,7 @@ class AuthnTestCase(DatabaseTestCase):
                 create_user_profile('Jesse',
                                     'Jesse Dhillon',
                                     '123foobar^#@',
-                                    user_profile.UserRole.Subscriber,
+                                    UserRole.Subscriber,
                                     'jesse@dhillon.com',
                                     '+14155551234').\
                 execute(session)

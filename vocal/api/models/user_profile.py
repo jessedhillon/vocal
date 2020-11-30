@@ -1,23 +1,11 @@
 from dataclasses import dataclass
 from datetime import datetime
-from enum import Enum
 from uuid import UUID
 
-from .base import ViewModel
+from vocal.api.constants import ContactMethodType, UserRole
+from vocal.api.storage.record import UserProfileRecord
 
-
-class UserRole(Enum):
-    Superuser = 'superuser'
-    Manager = 'manager'
-    Creator = 'creator'
-    Member = 'member'
-    Subscriber = 'subscriber'
-
-
-class ContactMethodType(Enum):
-    Email = 'email'
-    Phone = 'phone'
-    Address = 'address'
+from .base import ViewModel, define_view
 
 
 @dataclass(frozen=True)
@@ -57,6 +45,7 @@ class EmailContactMethod(ContactMethod):
     value: str
 
 
+@define_view('user_profile_id', 'public', name='public')
 @dataclass(frozen=True)
 class UserProfile(ViewModel):
     user_profile_id: UUID
@@ -69,13 +58,13 @@ class UserProfile(ViewModel):
     @dataclass(frozen=True)
     class _private(ViewModel):
         name: str
-        email_address: EmailContactMethod
-        phone_number: PhoneNumberContactMethod
-        billing_address: MailingAddressContactMethod
+        email_address: Optional[EmailContactMethod]
+        phone_number: Optional[PhoneNumberContactMethod]
+        billing_address: Optional[MailingAddressContactMethod]
 
     @dataclass(frozen=True)
     class _auth(ViewModel):
-        password: str
+        password: Optional[str]
         role: UserRole
 
     auth: _auth

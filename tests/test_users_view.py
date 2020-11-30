@@ -1,6 +1,7 @@
 import json
 
 import vocal.api.operations as op
+from vocal.api.constants import UserRole
 from vocal.api.models import user_profile
 
 from . import DatabaseTestCase
@@ -13,7 +14,7 @@ class UsersViewTestCase(DatabaseTestCase):
                 create_user_profile('Jesse',
                                     'Jesse Dhillon',
                                     '123foobar^#@',
-                                    user_profile.UserRole.Subscriber,
+                                    UserRole.Subscriber,
                                     'jesse@dhillon.com',
                                     '+14155551234').\
                 execute(session)

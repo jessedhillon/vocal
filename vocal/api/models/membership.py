@@ -1,5 +1,7 @@
 from enum import Enum
 
+from vocal.api.constants import ISO4217Currency, PaymentDemandType, PeriodicPaymentDemandPeriod,\
+        SubscriptionPlanStatus
 
 class SubscriptionPlanStatus(Enum):
     Active = 'active'

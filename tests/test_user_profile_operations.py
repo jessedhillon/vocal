@@ -1,10 +1,9 @@
 import json
-from importlib import import_module
 
 import pytest
 
 import vocal.api.operations as op
-import vocal.api.models.user_profile as user_profile
+from vocal.api.constants import UserRole
 
 from . import DatabaseTestCase
 
@@ -16,7 +15,7 @@ class UserProfileOperationsTestCase(DatabaseTestCase):
                 'Jesse',
                 'Jesse Dhillon',
                 '123foobar^#@',
-                user_profile.UserRole.Subscriber,
+                UserRole.Subscriber,
                 'jesse@dhillon.com',
                 '+14155551234').execute(session)
             rec = await op.user_profile.get_user_profile(profile_id).execute(session)
@@ -34,14 +33,14 @@ class UserProfileOperationsTestCase(DatabaseTestCase):
                 'Jesse',
                 'Jesse Dhillon',
                 '123foobar^#@',
-                user_profile.UserRole.Subscriber,
+                UserRole.Subscriber,
                 'jesse@dhillon.com',
                 '+14155551234'),
             op.user_profile.create_user_profile(
                 'Alice G.',
                 'Alice Goodwell',
                 'password123!',
-                user_profile.UserRole.Subscriber,
+                UserRole.Subscriber,
                 'alice@example.com'),
         ])
         assert all(profile_ids)
@@ -72,14 +71,14 @@ class UserProfileOperationsTestCase(DatabaseTestCase):
                     'Jesse',
                     'Jesse Dhillon',
                     '123foobar^#@',
-                    user_profile.UserRole.Subscriber,
+                    UserRole.Subscriber,
                     email,
                     '+14155551234'),
                 op.user_profile.create_user_profile(
                     'Jesse',
                     'Jesse Dhillon',
                     '123foobar^#@',
-                    user_profile.UserRole.Subscriber,
+                    UserRole.Subscriber,
                     email),
             ])
         assert str(excinfo.value) == f"user profile with email {email} already exists"
@@ -92,14 +91,14 @@ class UserProfileOperationsTestCase(DatabaseTestCase):
                     'Jesse',
                     'Jesse Dhillon',
                     '123foobar^#@',
-                    user_profile.UserRole.Subscriber,
+                    UserRole.Subscriber,
                     None,
                     pn),
                 op.user_profile.create_user_profile(
                     'Jesse',
                     'Jesse Dhillon',
                     '123foobar^#@',
-                    user_profile.UserRole.Subscriber,
+                    UserRole.Subscriber,
                     None,
                     pn),
             ])
