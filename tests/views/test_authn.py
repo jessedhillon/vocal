@@ -5,7 +5,7 @@ from vocal.api.constants import UserRole
 from vocal.api.models import user_profile
 from vocal.api.security import Capabilities as caps, _as_values
 
-from . import DatabaseTestCase
+from .. import DatabaseTestCase
 
 
 class AuthnTestCase(DatabaseTestCase):

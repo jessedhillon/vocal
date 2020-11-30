@@ -4,7 +4,7 @@ import vocal.api.operations as op
 from vocal.api.constants import UserRole
 from vocal.api.models import user_profile
 
-from . import DatabaseTestCase
+from .. import DatabaseTestCase
 
 
 class UsersViewTestCase(DatabaseTestCase):

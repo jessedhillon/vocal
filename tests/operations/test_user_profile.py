@@ -5,7 +5,7 @@ import pytest
 import vocal.api.operations as op
 from vocal.api.constants import UserRole
 
-from . import DatabaseTestCase
+from .. import DatabaseTestCase
 
 
 class UserProfileOperationsTestCase(DatabaseTestCase):
@@ -103,3 +103,4 @@ class UserProfileOperationsTestCase(DatabaseTestCase):
                     pn),
             ])
         assert str(excinfo.value) == f"user profile with phone number {pn} already exists"
+
