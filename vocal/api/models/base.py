@@ -10,7 +10,7 @@ class ViewModel(object):
     def as_dict(self):
         return dataclasses.asdict(self)
 
-    def get_view(self, view_name):
+    def get_view(self, view_name: str):
         viewdef = self.__views__[view_name]
         return {k: v.get_view(view_name) if isinstance(v, ViewModel) else v
                 for k, v in self.as_dict().items() if k in viewdef}

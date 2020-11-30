@@ -1,6 +1,8 @@
 import sqlalchemy
 import sqlalchemy.ext.asyncio
 
+from .record import BaseRecord, Recordset
+
 
 async def configure(appctx):
     appctx.declare('storage')

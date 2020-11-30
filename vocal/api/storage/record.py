@@ -1,5 +1,7 @@
-from typing import Optional
+from collections.abc import Sequence
+from typing import Any, Optional
 
+from itertools import groupby
 from dataclasses import dataclass, field
 from datetime import datetime
 from decimal import Decimal
@@ -14,12 +16,26 @@ from vocal.api.constants import ContactMethodType, ISO4217Currency, Subscription
 
 class BaseRecord(object):
     @classmethod
-    def unmarshal_result(cls: 'BaseRecord', rs: Result) -> list['BaseRecord']:
+    def unmarshal_result(cls: 'BaseRecord', rs: Result) -> 'Recordset':
         return [cls.unmarshal_row(row) for row in rs.all()]
 
     @classmethod
     def unmarshal_row(cls: 'BaseRecord', row: Row) -> 'BaseRecord':
         raise NotImplementedError()
+
+
+class Recordset(Sequence):
+    def __init__(self, records: list[BaseRecord]):
+        self._records = records
+
+    def __len__(self):
+        return self._records.__len__()
+
+    def __getitem__(self, index):
+        return self._records.__getitem__(index)
+
+    def group_by(self, field_name: str) -> dict[Any, list[BaseRecord]]:
+        return groupby(self._records, key=lambda r: getattr(r, field_name))
 
 
 @dataclass(frozen=True)
@@ -62,7 +78,7 @@ class EmailContactMethodRecord(BaseRecord):
     @classmethod
     def unmarshal_row(cls: 'EmailContactMethodRecord', row: Row) -> 'EmailContactMethodRecord':
         if row[3] is not ContactMethodType.Email.value:
-            raise ValueError(f"wrong contact_method_type for email {row[3]}")
+            raise ValueError(f"wrong contact_method_type for email: {row[3]}")
         return EmailContactMethodRecord(user_profile_id=UUID(row[0]),
                                         contact_method_id=UUID(row[1]),
                                         contact_method_type=ContactMethodType.Email,
@@ -81,7 +97,7 @@ class PhoneContactMethodRecord(BaseRecord):
     @classmethod
     def unmarshal_row(cls: 'PhoneContactMethodRecord', row: Row) -> 'PhoneContactMethodRecord':
         if row[3] is not ContactMethodType.Phone.value:
-            raise ValueError(f"wrong contact_method_type for phone number {row[3]}")
+            raise ValueError(f"wrong contact_method_type for phone number: {row[3]}")
         return PhoneContactMethodRecord(user_profile_id=UUID(row[0]),
                                         contact_method_id=UUID(row[1]),
                                         contact_method_type=ContactMethodType.Phone,

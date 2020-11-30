@@ -56,9 +56,10 @@ async def init_authn_session(request, session, ctx):
 @with_context
 @security.requires(caps.Authenticate)
 async def get_authn_challenge(request, session, ctx):
+    # TODO: normalize marshal/unmarshal of AuthnSession
     authn_session = AuthnSession(**session['authn_session'])
     if 'authn_challenge' in session:
-        raise HTTPBadRequest()
+        raise HTTPBadRequest("cannot request a new challenge while challenges are pending")
 
     async with op.session(ctx) as ss:
         u = await op.user_profile.\
@@ -66,7 +67,8 @@ async def get_authn_challenge(request, session, ctx):
             execute(ss)
 
         if authn_session.require_challenges:
-            chtype = authn_session.require_challenges.pop(0)
+            # TODO: normalize marshal/unmarshal of AuthnSession
+            chtype = AuthnChallengeType(authn_session.require_challenges.pop(0))
 
             challenge = AuthnChallenge.create_challenge_for_user(u, chtype)
             session['authn_session'] = authn_session
@@ -91,7 +93,7 @@ async def verify_authn_challenge(request, session, ctx):
     challenge_response = AuthnChallengeResponse(**await request.json())
 
     if challenge_response.challenge_id != authn_challenge.challenge_id:
-        raise HTTPBadRequest()
+        raise ValueError("invalid challenge")
 
     authn_challenge.attempts += 1
     if authn_challenge.attempts > security.MaxVerificationChallengeAttempts:
@@ -100,11 +102,13 @@ async def verify_authn_challenge(request, session, ctx):
         raise HTTPForbidden(text="Too many invalid attempts")
 
     otp_types = [AuthnChallengeType.Email, AuthnChallengeType.SMS]
-    if authn_challenge.challenge_type in otp_types:
+    # TODO: fix marshal/unmarshal of AuthnSession et al
+    chtype = AuthnChallengeType(authn_challenge.challenge_type)
+    if chtype in otp_types:
         if challenge_response.passcode != authn_challenge.secret:
             session['authn_challenge'] = authn_challenge
             raise HTTPUnauthorized(text="Incorrect passcode")
-    elif authn_challenge.challenge_type is AuthnChallengeType.Password:
+    elif chtype is AuthnChallengeType.Password:
         # TODO: implement this
         raise NotImplementedError()
     else:

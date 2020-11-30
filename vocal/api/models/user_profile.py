@@ -1,3 +1,4 @@
+from typing import Optional
 from dataclasses import dataclass
 from datetime import datetime
 from uuid import UUID
@@ -72,7 +73,7 @@ class UserProfile(ViewModel):
     private: _private
 
     @classmethod
-    def from_record(cls, rec):
+    def unmarshal_record(cls: 'UserProfile', rec: UserProfileRecord) -> 'UserProfile':
         email = EmailContactMethod(contact_method_id=rec.email_contact_method_id,
                                    verified=rec.email_contact_method_verified,
                                    method=ContactMethodType.Email,

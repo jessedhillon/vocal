@@ -197,7 +197,7 @@ async def get_contact_method(session: AsyncSession, contact_method_id: UUID,
 
 @operation
 async def mark_contact_method_verified(session: AsyncSession, contact_method_id: UUID,
-                                       user_profile_id: UUID=None) -> int:
+                                       user_profile_id: UUID=None):
     u = contact_method.\
         update().\
         values(verified=True).\
@@ -212,4 +212,4 @@ async def mark_contact_method_verified(session: AsyncSession, contact_method_id:
     if c == 0:
         raise ValueError(f"no unverified contact method exists with "
                           "contact_method_id {contact_method_id!s}")
-    return c
+    assert c == 1

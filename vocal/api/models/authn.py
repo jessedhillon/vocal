@@ -3,6 +3,7 @@ from uuid import UUID, uuid4
 
 import vocal.api.security as security
 import vocal.api.util as util
+from vocal.api.storage.record import UserProfileRecord
 from vocal.api.constants import AuthnChallengeType
 
 from .base import define_view, ViewModel
@@ -18,7 +19,9 @@ class AuthnChallenge(ViewModel):
     attempts: int = field(default=0)
 
     @classmethod
-    def create_challenge_for_user(cls, profile_rec, challenge_type):
+    def create_challenge_for_user(cls,profile_rec: UserProfileRecord,
+                                  challenge_type: AuthnChallengeType
+                                  ) -> 'AuthnChallenge':
         if challenge_type is AuthnChallengeType.Email:
             secret = util.generate_otp()
             hint = util.mask_email(profile_rec.email_address)
