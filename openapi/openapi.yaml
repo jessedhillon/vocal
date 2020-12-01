@@ -249,7 +249,7 @@ paths:
           description: Session authorized, redirect to `dest`
         401:
           $ref: '#/components/responses/AuthnzRefusedResponse'
-  /plan:
+  /plans:
     get:
       tags:
         - commerce
@@ -282,7 +282,7 @@ paths:
           $ref: '#/components/responses/CreateSubscriptionPlanResponse'
         400:
           $ref: '#/components/responses/ErrorResponse'
-  /plan/{subscriptionPlanId}:
+  /plans/{subscriptionPlanId}:
     put:
       tags:
         - commerce
@@ -330,6 +330,28 @@ paths:
         404:
           $ref: '#/components/responses/ErrorResponse'
         405:
+          $ref: '#/components/responses/ErrorResponse'
+  /plans/{subscriptionPlanId}/membership:
+    get:
+      tags:
+        - commerce
+      summary: Get the roster for a `SubscriptionPlan`
+      operationId: getSubscriptionPlanMembership
+      security:
+        - sessionCookie:
+          - plan.update
+      parameters:
+        - in: path
+          name: subscriptionPlanId
+          schema:
+            type: string
+          required: true
+      responses:
+        200:
+          $ref: '#/components/responses/GetSubscriptionPlanMembershipResponse'
+        400:
+          $ref: '#/components/responses/ErrorResponse'
+        404:
           $ref: '#/components/responses/ErrorResponse'
   /feeds:
     get:
@@ -387,8 +409,8 @@ paths:
     post:
       tags:
         - content
-      summary: Create a new `Article` in a `Feed`
-      operationId: postArticle
+      summary: Publish a new `Article` to a `Feed`
+      operationId: publishArticle
       security:
         - sessionCookie:
           - article.create(feed={feedKey})
@@ -423,6 +445,23 @@ paths:
           $ref: '#/components/responses/ErrorResponse'
         409:
           $ref: '#/components/responses/ErrorResponse'
+  /articles:
+    post:
+      tags:
+        - content
+      summary: Create an `Article`
+      operationId: createArticle
+      security:
+        - sessionCookie:
+          - article.create
+      requestBody:
+        $ref: '#/components/requestBodies/CreateArticleRequest'
+      responses:
+        200:
+          $ref: '#/components/responses/CreateArticleResponse'
+        403:
+          $ref: '#/components/responses/ErrorResponse'
+  /articles/{articleKey}:
     post:
       tags:
         - content
@@ -442,6 +481,27 @@ paths:
       responses:
         200:
           $ref: '#/components/responses/UpdateArticleResponse'
+        403:
+          $ref: '#/components/responses/ErrorResponse'
+        404:
+          $ref: '#/components/responses/ErrorResponse'
+    delete:
+      tags:
+        - content
+      summary: Delete (softly) a given `Article`
+      operationId: deleteArticle
+      parameters:
+        - in: path
+          name: articleKey
+          schema:
+            type: string
+          required: true
+      security:
+        - sessionCookie:
+          - article.delete
+      responses:
+        200:
+          $ref: '#/components/responses/BasicResponse'
         403:
           $ref: '#/components/responses/ErrorResponse'
         404:

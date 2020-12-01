@@ -115,12 +115,19 @@ UpdateSubscriptionPlanResponse:
   description: Update `SubscriptionPlan` successful response
   content:
     application/json:
+    application/json:
       schema:
         allOf:
-          - $ref: './schemas.yaml#/ScalarResult'
+          - $ref: './schemas.yaml#/PagedResultSet'
           - properties:
-              data:
-                $ref: './schemas.yaml#/SubscriptionPlan'
+              results:
+                type: array
+                items:
+                  $ref: './schemas.yaml#/UserProfile'
+GetSubscriptionPlanMembershipResponse:
+  description: Successful request for `SubscriptionPlan` roster
+  content:
+    application/json:
 GetFeedResponse:
   description: "`Feed` successful response"
   content:
@@ -184,6 +191,16 @@ GetArticleResponse:
                 $ref: './schemas.yaml#/Article'
 CreateArticleResponse:
   description: Create `Article` successful response
+  content:
+    application/json:
+      schema:
+        allOf:
+          - $ref: './schemas.yaml#/ScalarResult'
+          - properties:
+              data:
+                $ref: './schemas.yaml#/Article'
+PublishArticleResponse:
+  description: Publish `Article` successful response
   content:
     application/json:
       schema:

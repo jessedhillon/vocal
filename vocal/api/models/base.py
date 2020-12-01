@@ -15,31 +15,16 @@ class ViewModel(object):
         return {k: v.get_view(view_name) if isinstance(v, ViewModel) else v
                 for k, v in self.as_dict().items() if k in viewdef}
 
-    def __post_init__(self):
-        for field in dataclasses.fields(self):
-            t = field.type
-            v = getattr(self, field.name)
+    @classmethod
+    def unmarshal_recordset(cls: 'ViewModel', recs: list[BaseRecord]) -> list['ViewModel']:
+        return [cls.unmarshal_record(rec) for rec in recs]
 
-            # unmarshall enum or list[enum]
-            is_list = False
-            if isinstance(field.type, GenericAlias) and field.type.__origin__ is list:
-                t = t.__args__[0]
-                is_list = True
-            if is_list:
-                enum_list = []
-                if issubclass(t, Enum):
-                    for u in v:
-                        if isinstance(u, str):
-                            enum_list.append(t(u))
-                        else:
-                            enum_list.append(u)
-                    setattr(self, field.name, enum_list)
-            else:
-                if issubclass(t, Enum) and isinstance(v, str):
-                    setattr(self, field.name, t(v))
+    @classmethod
+    def unmarshal_record(cls: 'ViewModel', rec: BaseRecord) -> 'ViewModel':
+        raise NotImplementedError()
 
 
-def define_view(*fields, name):
+def define_view(*fields: list[str], name: str):
     def f(cls):
         if not hasattr(cls, '__views__'):
             cls.__views__ = {}
