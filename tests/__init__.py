@@ -1,4 +1,5 @@
 import asyncio
+import json
 from aiohttp.cookiejar import CookieJar
 from importlib import import_module
 from pathlib import Path
@@ -9,6 +10,7 @@ import sqlalchemy
 from aiohttp.test_utils import AioHTTPTestCase, TestClient, setup_test_loop
 
 import vocal.api.app
+import vocal.api.operations as op
 import vocal.config as config
 import vocal.log
 from vocal.util.asyncio import synchronously
@@ -67,6 +69,50 @@ class BaseTestCase(AioHTTPTestCase, metaclass=AsyncTestCase):
         if not self.has_cookie(cookie_name):
             raise KeyError(cookie_name)
         return self.cookie_jar._cookies['127.0.0.1'][cookie_name]
+
+    async def authenticate_as(self, role):
+        async with op.session(self.appctx) as session:
+            profile_id = await op.user_profile.\
+                create_user_profile('Test',
+                                    'Test User',
+                                    '123foobar^#@',
+                                    role,
+                                    'test@example.com',
+                                    '+14155551234').\
+                execute(session)
+            profile = await op.user_profile.\
+                get_user_profile(user_profile_id=profile_id).\
+                execute(session)
+            await op.user_profile.\
+                mark_contact_method_verified(contact_method_id=profile.email_contact_method_id).\
+                execute(session)
+
+        body = {
+            'principalName': profile.email_address,
+            'principalType': 'email',
+        }
+        await self.client.request('POST', '/authn/session', json=body)
+        await self.client.request('GET', '/authn/challenge')
+
+        cookie = json.loads(self.get_cookie('TEST_SESSION').value)
+        session = cookie['session']
+        challenge = session['authn_challenge']
+
+        chresp = {
+            'challenge_id': challenge['challenge_id'],
+            'passcode': challenge['secret'],
+        }
+        resp = await self.client.request('POST', '/authn/challenge', json=chresp)
+
+        cookie = json.loads(self.get_cookie('TEST_SESSION').value)
+        session = cookie['session']
+        challenge = session['authn_challenge']
+
+        chresp = {
+            'challenge_id': challenge['challenge_id'],
+            'passcode': '123foobar^#@',
+        }
+        resp = await self.client.request('POST', '/authn/challenge', json=chresp)
 
 
 class DatabaseTestCase(BaseTestCase):

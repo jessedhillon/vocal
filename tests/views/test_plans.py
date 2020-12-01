@@ -2,7 +2,7 @@ import json
 from decimal import Decimal
 
 import vocal.api.operations as op
-from vocal.api.constants import PaymentDemandType, PeriodicPaymentDemandPeriod
+from vocal.api.constants import PaymentDemandType, PeriodicPaymentDemandPeriod, UserRole
 from vocal.api.models.membership import SubscriptionPlan
 
 from .. import DatabaseTestCase
@@ -42,6 +42,7 @@ class PlansViewTestCase(DatabaseTestCase):
         assert len([pd for pd in pds if pd['demand_type'] == 'periodic']) == 3
 
     async def test_create_plan(self):
+        await self.authenticate_as(UserRole.Superuser)
         data = {
             'rank': 1,
             'name': "Basic member",
