@@ -12,20 +12,21 @@ from vocal.util.web import with_context, with_session, json_response
 
 @json_response
 @util.message
-@with_session(new=True)
+@with_session
 @with_context
 async def get_subscription_plans(request, session, ctx):
     async with op.session(ctx) as ss:
         plans = await op.membership.\
             get_subscription_plans().\
+            returning(SubscriptionPlan).\
             execute(ss)
 
-    return SubscriptionPlan.unmarshal_recordset(plans)
+    return plans
 
 
 @json_response
 @util.message
-@with_session(new=True)
+@with_session
 @with_context
 @security.requires(caps.PlanCreate)
 async def create_subscription_plan(request, session, ctx):

@@ -1,6 +1,6 @@
-from uuid import uuid4
+from uuid import uuid4, UUID
 
-from aiohttp.web import HTTPAccepted, HTTPBadRequest, HTTPUnauthorized, Response, json_response
+from aiohttp.web import HTTPAccepted, HTTPBadRequest, HTTPUnauthorized, Response
 
 import vocal.api.operations as op
 import vocal.api.security as security
@@ -97,8 +97,7 @@ async def verify_authn_challenge(request, session, ctx):
 
     authn_challenge.attempts += 1
     if authn_challenge.attempts > security.MaxVerificationChallengeAttempts:
-        session.pop('authn_challenge')
-        session.pop('authn_session')
+        session.invalidate()
         raise HTTPForbidden(text="Too many invalid attempts")
 
     otp_types = [AuthnChallengeType.Email, AuthnChallengeType.SMS]
@@ -109,23 +108,29 @@ async def verify_authn_challenge(request, session, ctx):
             session['authn_challenge'] = authn_challenge
             raise HTTPUnauthorized(text="Incorrect passcode")
     elif chtype is AuthnChallengeType.Password:
-        # TODO: implement this
-        raise NotImplementedError()
+        # TODO: fix marshal/unmarshal of AuthnSession et al
+        async with op.session(ctx) as ss:
+            result = await op.authn.\
+                authenticate_user(user_profile_id=UUID(authn_session.user_profile_id),
+                                  password=challenge_response.passcode).\
+                execute(ss)
+            if not result:
+                raise HTTPUnauthorized(text="Incorrect passcode")
     else:
         raise HTTPBadRequest()
 
-    session.pop('authn_challenge')
+    del session['authn_challenge']
+    async with op.session(ctx) as ss:
+        u = await op.user_profile.\
+            get_user_profile(user_profile_id=authn_session.user_profile_id).\
+            execute(ss)
     if authn_session.require_challenges:
-        async with op.session(ctx) as ss:
-            u = await op.user_profile.\
-                get_user_profile(user_profile_id=authn_session.user_profile_id).\
-                execute(ss)
-
-        next_chtype = authn_session.require_challenges.pop(0)
-        next_challenge = AuthnChallengeResponse.create_challenge_for_user(u, next_chtype)
+        # TODO: fix marshal/unmarshal of AuthnSession et al
+        next_chtype = AuthnChallengeType(authn_session.require_challenges.pop(0))
+        next_challenge = AuthnChallenge.create_challenge_for_user(u, next_chtype)
         session['authn_challenge'] = next_challenge
-        return HTTPAccepted(text=next_challenge.get_view('public'))
+        return HTTPAccepted(), next_challenge.get_view('public')
     else:
-        security.add_capabilities(session, caps.ProfileList)
+        security.set_role(session, u.role)
         security.remove_capabilities(session, caps.Authenticate)
         return None

@@ -4,6 +4,8 @@ from functools import wraps
 import aiohttp_session
 from aiohttp.web_exceptions import HTTPForbidden
 
+from vocal.api.constants import UserRole
+
 
 MaxVerificationChallengeAttempts = 3
 
@@ -11,10 +13,26 @@ MaxVerificationChallengeAttempts = 3
 class Capabilities(Enum):
     Authenticate = 'authn'
     ProfileList = 'profile.list'
+    PlanCreate = 'plan.create'
+
+
+RoleCapabilities = {
+    UserRole.Superuser: {Capabilities.Authenticate, Capabilities.ProfileList,
+                         Capabilities.PlanCreate},
+    UserRole.Manager: {Capabilities.ProfileList},
+    UserRole.Creator: {Capabilities.ProfileList},
+    UserRole.Subscriber: {Capabilities.ProfileList},
+    UserRole.Member: {Capabilities.ProfileList},
+}
 
 
 def _as_values(caps):
     return [c.value for c in caps]
+
+
+def set_role(session, role):
+    session['capabilities'] = []
+    add_capabilities(session, *RoleCapabilities[role])
 
 
 def add_capabilities(session, *caps):
