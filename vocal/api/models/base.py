@@ -16,11 +16,11 @@ class ViewModel(object):
                 for k, v in self.as_dict().items() if k in viewdef}
 
     @classmethod
-    def unmarshal_recordset(cls: 'ViewModel', recs: list[BaseRecord]) -> list['ViewModel']:
+    def unmarshal_recordset(cls, recs: list[BaseRecord]) -> list['ViewModel']:
         return [cls.unmarshal_record(rec) for rec in recs]
 
     @classmethod
-    def unmarshal_record(cls: 'ViewModel', rec: BaseRecord) -> 'ViewModel':
+    def unmarshal_record(cls, rec: BaseRecord) -> 'ViewModel':
         raise NotImplementedError()
 
 

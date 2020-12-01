@@ -8,7 +8,7 @@ from .. import DatabaseTestCase
 
 
 class MembershipOperationsTestCase(DatabaseTestCase):
-    async def test_create_and_get_plans(self):
+    async def test_create_and_get_plan(self):
         async with op.session(self.appctx) as ss:
             plan_id = await op.membership.create_subscription_plan(
                 rank=1,

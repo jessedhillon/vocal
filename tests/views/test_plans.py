@@ -40,3 +40,48 @@ class PlansViewTestCase(DatabaseTestCase):
         pds = plan['payment_demands']
         assert len([pd for pd in pds if pd['demand_type'] == 'immediate']) == 1
         assert len([pd for pd in pds if pd['demand_type'] == 'periodic']) == 3
+
+    async def test_create_plan(self):
+        data = {
+            'rank': 1,
+            'name': "Basic member",
+            'description': "- Ad-free podcast episodes\n"
+                           "- Access to episodes one week before non-subscribers\n"
+                           "- Monthly members-only episode\n",
+            'payment_demands': [{
+                'demand_type': 'periodic',
+                'period': 'quarterly',
+                'amount': '25.0',
+                'iso_currency': 'USD',
+            }, {
+                'demand_type': 'periodic',
+                'period': 'annually',
+                'amount': '90.0',
+                'iso_currency': 'USD',
+            }, {
+                'demand_type': 'periodic',
+                'period': 'monthly',
+                'amount': '10.0',
+                'iso_currency': 'USD',
+            }, {
+                'demand_type': 'immediate',
+                'amount': '10.0',
+                'iso_currency': 'USD',
+            }]
+        }
+        resp = await self.client.request('POST', '/plans', json=data)
+        assert resp.status == 200
+
+        resp = await self.client.request('GET', '/plans')
+        j = await resp.json()
+        assert resp.status == 200
+
+        plans = j['data']
+        assert len(plans) == 1
+
+        plan = plans[0]
+        assert len(plan['payment_demands']) == 4
+
+        pds = plan['payment_demands']
+        assert len([pd for pd in pds if pd['demand_type'] == 'immediate']) == 1
+        assert len([pd for pd in pds if pd['demand_type'] == 'periodic']) == 3

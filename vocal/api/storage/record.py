@@ -1,7 +1,7 @@
 from collections.abc import Sequence
 from typing import Any, Optional
 
-from itertools import groupby
+import itertools
 from dataclasses import dataclass, field
 from datetime import datetime
 from decimal import Decimal
@@ -35,7 +35,7 @@ class Recordset(Sequence):
         return self._records.__getitem__(index)
 
     def group_by(self, field_name: str) -> dict[Any, list[BaseRecord]]:
-        return groupby(self._records, key=lambda r: getattr(r, field_name))
+        return itertools.groupby(self._records, key=lambda r: getattr(r, field_name))
 
 
 @dataclass(frozen=True)

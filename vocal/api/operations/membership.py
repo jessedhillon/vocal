@@ -15,8 +15,11 @@ from vocal.api.storage.sql import subscription_plan, payment_demand, periodic_pa
         immediate_payment_demand
 
 
-PaymentDemandDesc = tuple[UUID, PeriodicPaymentDemandPeriod, Decimal,
-                          Optional[ISO4217Currency], Optional[str]]
+PaymentDemandDesc = Union[tuple[PaymentDemandType, PeriodicPaymentDemandPeriod, Decimal,
+                                Optional[ISO4217Currency], Optional[str]],
+                          tuple[PaymentDemandType, Decimal, Optional[ISO4217Currency],
+                                Optional[str]]]
+
 
 @operation
 async def create_subscription_plan(session: AsyncSession, description: str,
