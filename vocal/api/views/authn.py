@@ -6,7 +6,7 @@ import vocal.api.util as util
 from vocal.api.constants import AuthnChallengeType, AuthnPrincipalType, UserRole
 from vocal.api.models.authn import AuthnSession, AuthnChallenge, AuthnChallengeResponse
 from vocal.api.models.requests import AuthnChallengeResponseRequest, InitiateAuthnSessionRequest
-from vocal.api.security import Capabilities as caps
+from vocal.api.security import Capability
 from vocal.util.web import with_context, with_session, json_response
 
 
@@ -34,7 +34,7 @@ async def init_authn_session(request, session, ctx):
         if u.role in {UserRole.Superuser, UserRole.Manager, UserRole.Creator}:
             session.require_challenge(AuthnChallengeType.Password)
 
-    security.add_capabilities(session, caps.Authenticate)
+    session.add_capabilities(Capability.Authenticate)
     return HTTPOk()
 
 
@@ -42,7 +42,7 @@ async def init_authn_session(request, session, ctx):
 @util.message
 @with_session
 @with_context
-@security.requires(caps.Authenticate)
+@security.requires(Capability.Authenticate)
 async def get_authn_challenge(request, session, ctx):
     if session.pending_challenge:
         raise HTTPBadRequest("cannot request a new challenge while challenges are pending")
@@ -61,7 +61,7 @@ async def get_authn_challenge(request, session, ctx):
 @util.message
 @with_session
 @with_context
-@security.requires(caps.Authenticate)
+@security.requires(Capability.Authenticate)
 async def verify_authn_challenge(request, session, ctx):
     if not session.pending_challenge:
         raise HTTPBadRequest()
@@ -104,6 +104,6 @@ async def verify_authn_challenge(request, session, ctx):
         return HTTPAccepted(), session.pending_challenge.get_view('public')
 
     session.authenticated = True
-    security.set_role(session, u.role)
-    security.remove_capabilities(session, caps.Authenticate)
+    session.set_role(u.role)
+    session.remove_capabilities(Capability.Authenticate)
     return HTTPOk()

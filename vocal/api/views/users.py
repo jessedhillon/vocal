@@ -8,7 +8,7 @@ import vocal.api.util as util
 from vocal.api.constants import AuthnChallengeType, ContactMethodType
 from vocal.api.models.authn import AuthnChallenge, AuthnChallengeResponse, AuthnSession
 from vocal.api.models.requests import AuthnChallengeResponseRequest
-from vocal.api.security import Capabilities as caps
+from vocal.api.security import Capability
 from vocal.util.web import with_context, with_session, json_response
 
 
@@ -16,7 +16,7 @@ from vocal.util.web import with_context, with_session, json_response
 @util.message
 @with_session
 @with_context
-@security.requires(caps.Authenticate)
+@security.requires(Capability.Authenticate)
 async def get_contact_method_verify_challenge(request, session, ctx):
     try:
         user_profile_id = UUID(request.match_info['user_profile_id'])
@@ -52,7 +52,7 @@ async def get_contact_method_verify_challenge(request, session, ctx):
 @util.message
 @with_session
 @with_context
-@security.requires(caps.Authenticate)
+@security.requires(Capability.Authenticate)
 async def verify_contact_method(request, session, ctx):
     try:
         user_profile_id = UUID(request.match_info['user_profile_id'])

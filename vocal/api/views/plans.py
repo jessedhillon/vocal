@@ -6,7 +6,7 @@ import vocal.api.util as util
 from vocal.api.constants import PaymentDemandType
 from vocal.api.models.membership import SubscriptionPlan
 from vocal.api.models.requests import CreateSubscriptionPlanRequest
-from vocal.api.security import Capabilities as caps
+from vocal.api.security import Capability
 from vocal.util.web import with_context, with_session, json_response
 
 
@@ -28,7 +28,7 @@ async def get_subscription_plans(request, session, ctx):
 @util.message
 @with_session
 @with_context
-@security.requires(caps.PlanCreate)
+@security.requires(Capability.PlanCreate)
 async def create_subscription_plan(request, session, ctx):
     plan = CreateSubscriptionPlanRequest.unmarshal_request(await request.json())
     async with op.session(ctx) as ss:

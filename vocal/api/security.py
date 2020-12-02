@@ -17,19 +17,18 @@ from vocal.api.models.authn import AuthnChallenge, AuthnChallengeType
 MaxVerificationChallengeAttempts = 3
 
 
-class Capabilities(Enum):
+class Capability(Enum):
     Authenticate = 'authn'
     ProfileList = 'profile.list'
     PlanCreate = 'plan.create'
 
 
-RoleCapabilities = {
-    UserRole.Superuser: {Capabilities.Authenticate, Capabilities.ProfileList,
-                         Capabilities.PlanCreate},
-    UserRole.Manager: {Capabilities.ProfileList},
-    UserRole.Creator: {Capabilities.ProfileList},
-    UserRole.Subscriber: {Capabilities.ProfileList},
-    UserRole.Member: {Capabilities.ProfileList},
+RoleCapability = {
+    UserRole.Superuser: {Capability.Authenticate, Capability.ProfileList, Capability.PlanCreate},
+    UserRole.Manager: {Capability.ProfileList},
+    UserRole.Creator: {Capability.ProfileList},
+    UserRole.Subscriber: {Capability.ProfileList},
+    UserRole.Member: {Capability.ProfileList},
 }
 
 
@@ -40,9 +39,10 @@ class AuthnSession(BaseSession):
             data.update({
                 'session': {
                     'authenticated': False,
-                    'user_profile_id': None,
-                    'required_challenges': [],
+                    'capabilities': [],
                     'pending_challenge': None,
+                    'required_challenges': [],
+                    'user_profile_id': None,
                 }
             })
         else:
@@ -50,13 +50,14 @@ class AuthnSession(BaseSession):
             if session_data is not None:
                 session_data.update({
                     'authenticated': bool(session_data['authenticated']),
-                    'user_profile_id': UUID(session_data['user_profile_id'])
-                                       if session_data.get('user_profile_id') else None,
-                    'required_challenges':\
-                        [AuthnChallengeType(ct) for ct in session_data['required_challenges']],
+                    'capabilities': [Capability(cap) for cap in session_data['capabilities']],
                     'pending_challenge':\
                         AuthnChallenge.unmarshal(session_data['pending_challenge'])
                         if session_data.get('pending_challenge') else None,
+                    'required_challenges':\
+                        [AuthnChallengeType(ct) for ct in session_data['required_challenges']],
+                    'user_profile_id': UUID(session_data['user_profile_id'])
+                                       if session_data.get('user_profile_id') else None,
                 })
 
         super().__init__(identity, data=data, new=new, max_age=max_age)
@@ -69,6 +70,10 @@ class AuthnSession(BaseSession):
     def authenticated(self, v: bool):
         self._mapping['authenticated'] = v
         self.changed()
+
+    @property
+    def capabilities(self) -> list[Capability]:
+        return self._mapping['capabilities']
 
     @property
     def user_profile_id(self) -> UUID:
@@ -104,6 +109,21 @@ class AuthnSession(BaseSession):
         self._mapping['pending_challenge'] = AuthnChallenge.create_for_contact_method(cm, chtype)
         self.changed()
 
+    def set_role(self, role: UserRole):
+        self._mapping['capabilities'] = []
+        self.add_capabilities(*RoleCapability[role])
+
+    def add_capabilities(self, *caps):
+        self._mapping['capabilities'] = set(self._mapping['capabilities']) | set(caps)
+        self.changed()
+
+    def remove_capabilities(self, *caps):
+        self._mapping['capabilities'] = set(self._mapping['capabilities']) - set(caps)
+        self.changed()
+
+    def has_capabilities(self, *caps):
+        return set(caps) <= set(self._mapping['capabilities'])
+
 
 class RedisStorage(RedisStorage):
     async def new_session(self):
@@ -127,6 +147,7 @@ class RedisStorage(RedisStorage):
                     data = None
                 return AuthnSession(key, data=data, new=False, max_age=self.max_age)
 
+
 class SimpleCookieStorage(SimpleCookieStorage):
     async def new_session(self):
         return AuthnSession(None, data=None, new=True, max_age=self.max_age)
@@ -139,44 +160,13 @@ class SimpleCookieStorage(SimpleCookieStorage):
             data = self._decoder(cookie)
             return AuthnSession(None, data=data, new=False, max_age=self.max_age)
 
-    async def save_session(self, request, response, session):
-        cookie_data = self._encoder(self._get_session_data(session))
-        self.save_cookie(response, cookie_data, max_age=session.max_age)
-
-
-def _as_values(caps):
-    return [c.value for c in caps]
-
-
-def set_role(session, role):
-    session['capabilities'] = []
-    add_capabilities(session, *RoleCapabilities[role])
-
-
-def add_capabilities(session, *caps):
-    session['capabilities'] = set(session.setdefault('capabilities', [])) | set(caps)
-    session.changed()
-
-
-def remove_capabilities(session, *caps):
-    caps = set(_as_values(caps))
-    scaps = set(session.setdefault('capabilities', []))
-    session['capabilities'] = set(scaps) - set(caps)
-    session.changed()
-
-
-def has_capabilities(session, *caps):
-    caps = set(_as_values(caps))
-    scaps = set(session.setdefault('capabilities', []))
-    return caps <= scaps
-
 
 def requires(*capabilities):
     def wrapper(handler):
         @wraps(handler)
         async def f(request, *args, **kwargs):
             session = await aiohttp_session.get_session(request)
-            if not has_capabilities(session, *capabilities):
+            if not session.has_capabilities(*capabilities):
                 raise HTTPForbidden()
             else:
                 return await handler(request, *args, **kwargs)

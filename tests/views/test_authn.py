@@ -3,7 +3,7 @@ import json
 import vocal.api.operations as op
 from vocal.api.constants import UserRole
 from vocal.api.models import user_profile
-from vocal.api.security import Capabilities as caps, _as_values
+from vocal.api.security import Capability
 
 from .. import DatabaseTestCase
 
@@ -30,7 +30,7 @@ class AuthnTestCase(DatabaseTestCase):
         session = self.get_session()
 
         assert 'capabilities' in session
-        assert set(session['capabilities']) == set(_as_values([caps.Authenticate]))
+        assert set(session['capabilities']) == set([Capability.Authenticate.value])
 
     async def test_cannot_get_authn_challenge_with_unverified_email(self):
         async with op.session(self.appctx) as session:
