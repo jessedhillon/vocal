@@ -68,11 +68,15 @@ class UserProfileRecord(BaseRecord):
 
 
 @dataclass(frozen=True)
-class EmailContactMethodRecord(BaseRecord):
+class ContactMethodRecord(BaseRecord):
     user_profile_id: UUID
     contact_method_id: UUID
     contact_method_type: ContactMethodType.Email
     verified: bool
+
+
+@dataclass(frozen=True)
+class EmailContactMethodRecord(ContactMethodRecord):
     email_address: str
 
     @classmethod
@@ -87,11 +91,7 @@ class EmailContactMethodRecord(BaseRecord):
 
 
 @dataclass(frozen=True)
-class PhoneContactMethodRecord(BaseRecord):
-    user_profile_id: UUID
-    contact_method_id: UUID
-    contact_method_type: ContactMethodType.Phone
-    verified: bool
+class PhoneContactMethodRecord(ContactMethodRecord):
     phone_number: str
 
     @classmethod

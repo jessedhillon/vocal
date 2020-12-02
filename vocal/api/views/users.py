@@ -1,12 +1,13 @@
-from uuid import uuid4
+from uuid import uuid4, UUID
 
-from aiohttp.web import HTTPBadRequest, HTTPForbidden
+from aiohttp.web import HTTPBadRequest, HTTPForbidden, HTTPNotFound, HTTPOk
 
 import vocal.api.operations as op
 import vocal.api.security as security
 import vocal.api.util as util
 from vocal.api.constants import AuthnChallengeType, ContactMethodType
 from vocal.api.models.authn import AuthnChallenge, AuthnChallengeResponse, AuthnSession
+from vocal.api.models.requests import AuthnChallengeResponseRequest
 from vocal.api.security import Capabilities as caps
 from vocal.util.web import with_context, with_session, json_response
 
@@ -17,11 +18,13 @@ from vocal.util.web import with_context, with_session, json_response
 @with_context
 @security.requires(caps.Authenticate)
 async def get_contact_method_verify_challenge(request, session, ctx):
-    user_profile_id = request.match_info['user_profile_id']
-    contact_method_id = request.match_info['contact_method_id']
-    authn_session = AuthnSession(**session['authn_session'])
+    try:
+        user_profile_id = UUID(request.match_info['user_profile_id'])
+        contact_method_id = UUID(request.match_info['contact_method_id'])
+    except ValueError:
+        raise HTTPNotFound()
 
-    if user_profile_id != authn_session.user_profile_id:
+    if user_profile_id != session.user_profile_id:
         raise HTTPForbidden()
 
     async with op.session(ctx) as ss:
@@ -32,24 +35,17 @@ async def get_contact_method_verify_challenge(request, session, ctx):
         if cm.verified:
             raise ValueError("contact method is already verified")
 
-        secret = util.generate_otp()
         if cm.contact_method_type is ContactMethodType.Email:
-            hint = util.mask_email(cm.email_address)
-            chtype = AuthnChallengeType.Email
             # TODO: deliver challenge
+            chtype = AuthnChallengeType.Email
 
         elif cm.contact_method_type is ContactMethodType.Phone:
-            hint = util.mask_phone_number(cm.phone_number)
-            chtype = AuthnChallengeType.SMS
             # TODO: deliver challenge
+            chtype = AuthnChallengeType.SMS
 
-        challenge_id = uuid4()
-        challenge = AuthnChallenge(challenge_id=challenge_id, challenge_type=chtype,
-                                   hint=hint, secret=secret)
-        session['verify_challenge'] = challenge
-        session.changed()
-
-        return challenge.get_view('public')
+        session.require_challenge(chtype)
+        session.next_challenge_for_contact_method(cm)
+        return session.pending_challenge.get_view('public')
 
 
 @json_response
@@ -58,26 +54,27 @@ async def get_contact_method_verify_challenge(request, session, ctx):
 @with_context
 @security.requires(caps.Authenticate)
 async def verify_contact_method(request, session, ctx):
-    user_profile_id = request.match_info['user_profile_id']
-    contact_method_id = request.match_info['contact_method_id']
-    authn_session = AuthnSession(**session['authn_session'])
+    try:
+        user_profile_id = UUID(request.match_info['user_profile_id'])
+        contact_method_id = UUID(request.match_info['contact_method_id'])
+    except ValueError:
+        raise HTTPNotFound()
 
-    verify_challenge = AuthnChallenge(**session['verify_challenge'])
-    challenge_response = AuthnChallengeResponse(**await request.json())
+    challenge_response = AuthnChallengeResponseRequest.unmarshal_request(await request.json())
 
-    if user_profile_id != authn_session.user_profile_id:
+    if user_profile_id != session.user_profile_id:
         raise HTTPForbidden()
 
-    if challenge_response.challenge_id != verify_challenge.challenge_id:
+    if challenge_response.challenge_id != session.pending_challenge.challenge_id:
         raise HTTPBadRequest()
 
-    verify_challenge.attempts += 1
+    session.pending_challenge.attempts += 1
     session.changed()
-    if verify_challenge.attempts > security.MaxVerificationChallengeAttempts:
-        session.pop('verify_challenge')
+    if session.pending_challenge.attempts > security.MaxVerificationChallengeAttempts:
+        session.invalidate()
         raise HTTPForbidden(body="Too many invalid attempts")
 
-    if challenge_response.passcode != verify_challenge.secret:
+    if challenge_response.passcode != session.pending_challenge.secret:
         raise HTTPUnauthorized(body="Incorrect passcode")
 
     async with op.session(ctx) as ss:
@@ -85,5 +82,5 @@ async def verify_contact_method(request, session, ctx):
             mark_contact_method_verified(contact_method_id, user_profile_id=user_profile_id).\
             execute(ss)
 
-    session.pop('verify_challenge')
-    return
+    session.clear_pending_challenge()
+    return HTTPOk()

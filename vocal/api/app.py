@@ -1,10 +1,9 @@
 import aioredis
 import aiohttp_session
-from aiohttp_session import SimpleCookieStorage
-from aiohttp_session.redis_storage import RedisStorage
 from aiohttp.web import Application
 
 import vocal.util as util
+from vocal.api.security import RedisStorage, SimpleCookieStorage
 
 from . import routes
 from . import storage

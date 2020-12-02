@@ -26,11 +26,8 @@ class AuthnTestCase(DatabaseTestCase):
         resp = await self.client.request('POST', '/authn/session', json=body)
         j = await resp.json()
 
-        assert 'session_id' in j['data']
-        assert len(j['data'].keys()) == 1
-
         assert 'TEST_SESSION' in resp.cookies
-        session = json.loads(resp.cookies['TEST_SESSION'].value).get('session', {})
+        session = self.get_session()
 
         assert 'capabilities' in session
         assert set(session['capabilities']) == set(_as_values([caps.Authenticate]))
@@ -49,10 +46,7 @@ class AuthnTestCase(DatabaseTestCase):
             'principalName': 'jesse@dhillon.com',
             'principalType': 'email',
         }
-        resp = await self.client.request('POST', '/authn/session', json=body)
-        cookie = json.loads(self.cookie_jar._cookies['127.0.0.1']['TEST_SESSION'].value)
-        session = cookie['session']
-        authn_session = session['authn_session']
+        await self.client.request('POST', '/authn/session', json=body)
 
         resp = await self.client.request('GET', '/authn/challenge')
         j = await resp.json()
@@ -83,11 +77,10 @@ class AuthnTestCase(DatabaseTestCase):
         await self.client.request('POST', '/authn/session', json=body)
         await self.client.request('GET', '/authn/challenge')
 
-        cookie = json.loads(self.get_cookie('TEST_SESSION').value)
-        session = cookie['session']
-        assert 'authn_challenge' in session
+        session = self.get_session()
+        assert session['pending_challenge'] is not None
 
-        challenge = session['authn_challenge']
+        challenge = session['pending_challenge']
         chresp = {
             'challenge_id': challenge['challenge_id'],
             'passcode': challenge['secret'],
@@ -99,15 +92,14 @@ class AuthnTestCase(DatabaseTestCase):
         assert not j['status']['success']
         assert 'Incorrect passcode' in j['status']['errors']
 
-        cookie = json.loads(self.get_cookie('TEST_SESSION').value)
-        challenge = cookie['session']['authn_challenge']
+        session = self.get_session()
+        challenge = session['pending_challenge']
         assert challenge['attempts'] == 1
 
         resp = await self.client.request('POST', '/authn/challenge', json=chresp)
-        cookie = json.loads(self.get_cookie('TEST_SESSION').value)
-        session = cookie['session']
-        assert set(session['capabilities']) == set(['profile.list'])
+        session = self.get_session()
         assert resp.status == 200
+        assert set(session['capabilities']) == set(['profile.list'])
 
         resp = await self.client.request('POST', '/authn/challenge', json=chresp)
         assert resp.status == 403

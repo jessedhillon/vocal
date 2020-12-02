@@ -36,9 +36,8 @@ class UsersViewTestCase(DatabaseTestCase):
         assert resp.status == 200
         assert j['data']['hint'] == 'j****@dhillon.com'
 
-        sessj = self.get_cookie('TEST_SESSION').value
-        sess = json.loads(sessj)['session']
-        vc = sess['verify_challenge']
+        session = self.get_session()
+        vc = session['pending_challenge']
 
         vcresp = {
             'challenge_id': vc['challenge_id'],
@@ -50,9 +49,8 @@ class UsersViewTestCase(DatabaseTestCase):
                 json=vcresp)
         assert resp.status == 200
 
-        sessj = self.get_cookie('TEST_SESSION').value
-        sess = json.loads(sessj)['session']
-        assert 'verify_challenge' not in sess
+        session = self.get_session()
+        assert session['pending_challenge'] is None
 
         async with op.session(self.appctx) as session:
             cm = await op.user_profile.\

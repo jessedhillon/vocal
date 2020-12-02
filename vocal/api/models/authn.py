@@ -1,10 +1,10 @@
 from dataclasses import dataclass, field
+from typing import Optional
 from uuid import UUID, uuid4
 
-import vocal.api.security as security
 import vocal.api.util as util
-from vocal.api.storage.record import UserProfileRecord
-from vocal.api.constants import AuthnChallengeType
+from vocal.api.storage.record import UserProfileRecord, ContactMethodRecord
+from vocal.api.constants import AuthnChallengeType, ContactMethodType
 
 from .base import define_view, ViewModel
 
@@ -19,9 +19,17 @@ class AuthnChallenge(ViewModel):
     attempts: int = field(default=0)
 
     @classmethod
-    def create_challenge_for_user(cls,profile_rec: UserProfileRecord,
-                                  challenge_type: AuthnChallengeType
-                                  ) -> 'AuthnChallenge':
+    def unmarshal(self, obj: dict) -> 'AuthnChallenge':
+        return AuthnChallenge(challenge_id=UUID(obj['challenge_id']),
+                              challenge_type=AuthnChallengeType(obj['challenge_type']),
+                              hint=str(obj['hint']),
+                              secret=str(obj['secret']),
+                              attempts=int(obj['attempts']))
+
+    @classmethod
+    def create_for_user(cls, profile_rec: UserProfileRecord,
+                        challenge_type: AuthnChallengeType
+                        ) -> 'AuthnChallenge':
         if challenge_type is AuthnChallengeType.Email:
             secret = util.generate_otp()
             hint = util.mask_email(profile_rec.email_address)
@@ -40,6 +48,21 @@ class AuthnChallenge(ViewModel):
 
         return cls(challenge_id=uuid4(), challenge_type=challenge_type, hint=hint, secret=secret)
 
+    @classmethod
+    def create_for_contact_method(cls, cm_rec: ContactMethodRecord,
+                                  challenge_type: AuthnChallengeType
+                                  ) -> 'AuthnChallenge':
+        secret = util.generate_otp()
+        if cm_rec.contact_method_type is ContactMethodType.Email:
+            hint = util.mask_email(cm_rec.email_address)
+            chtype = AuthnChallengeType.Email
+
+        elif cm_rec.contact_method_type is ContactMethodType.Phone:
+            hint = util.mask_phone_number(cm_rec.phone_number)
+            chtype = AuthnChallengeType.SMS
+
+        return cls(challenge_id=uuid4(), challenge_type=challenge_type, hint=hint, secret=secret)
+
 
 @dataclass
 class AuthnChallengeResponse(ViewModel):
@@ -47,9 +70,22 @@ class AuthnChallengeResponse(ViewModel):
     passcode: str
 
 
+
 @dataclass
 @define_view('session_id', name='public')
 class AuthnSession(ViewModel):
+    authenticated: bool
     session_id: UUID
     user_profile_id: UUID
     require_challenges: list[AuthnChallengeType]
+    pending_challenge: Optional[AuthnChallenge]
+
+    @classmethod
+    def unmarshal(self, obj: dict) -> 'AuthnSession':
+        return AuthnSession(authenticated=bool(obj['authenticated']),
+                            session_id=UUID(obj['session_id']),
+                            user_profile_id=UUID(obj['user_profile_id']),
+                            require_challenges=[AuthnChallengeType(ct)
+                                                for ct in obj.get('require_challenges', [])],
+                            pending_challenge=AuthnChallenge.unmarshal(obj['pending_challenge'])
+                                              if obj.get('pending_challenge') else None)

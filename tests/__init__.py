@@ -70,6 +70,10 @@ class BaseTestCase(AioHTTPTestCase, metaclass=AsyncTestCase):
             raise KeyError(cookie_name)
         return self.cookie_jar._cookies['127.0.0.1'][cookie_name]
 
+    def get_session(self):
+        cv = json.loads(self.get_cookie('TEST_SESSION').value)
+        return cv['session']
+
     async def authenticate_as(self, role):
         async with op.session(self.appctx) as session:
             profile_id = await op.user_profile.\
@@ -96,7 +100,7 @@ class BaseTestCase(AioHTTPTestCase, metaclass=AsyncTestCase):
 
         cookie = json.loads(self.get_cookie('TEST_SESSION').value)
         session = cookie['session']
-        challenge = session['authn_challenge']
+        challenge = session['pending_challenge']
 
         chresp = {
             'challenge_id': challenge['challenge_id'],
@@ -106,7 +110,7 @@ class BaseTestCase(AioHTTPTestCase, metaclass=AsyncTestCase):
 
         cookie = json.loads(self.get_cookie('TEST_SESSION').value)
         session = cookie['session']
-        challenge = session['authn_challenge']
+        challenge = session['pending_challenge']
 
         chresp = {
             'challenge_id': challenge['challenge_id'],

@@ -677,7 +677,7 @@ PagedResultSet:
             - page
             - total
             - size
-        results:
+        data:
           type: array
           items:
             type: object

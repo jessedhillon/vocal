@@ -1,6 +1,11 @@
 from enum import Enum
 
 
+class AuthnPrincipalType(Enum):
+    Email = 'email'
+    Phone = 'phone'
+
+
 class AuthnChallengeType(Enum):
     Password = 'password'
     Email = 'email'

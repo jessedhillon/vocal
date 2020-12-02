@@ -205,7 +205,7 @@ async def mark_contact_method_verified(session: AsyncSession, contact_method_id:
         where(contact_method.c.verified == false())
 
     if user_profile_id is not None:
-        u = u.where(contact_method.c.user_profile_id == user_profile_id)
+        u = u.where(contact_method.c.user_profile_id == str(user_profile_id))
 
     rs = await session.execute(u)
     c = rs.rowcount

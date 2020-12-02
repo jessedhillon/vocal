@@ -1,8 +1,32 @@
 from decimal import Decimal
 from dataclasses import dataclass
 from typing import Optional, Union
+from uuid import UUID
 
-from vocal.api.constants import PaymentDemandType, ISO4217Currency, PeriodicPaymentDemandPeriod
+from vocal.api.constants import AuthnPrincipalType, PaymentDemandType, ISO4217Currency,\
+    PeriodicPaymentDemandPeriod
+
+
+@dataclass(frozen=True)
+class InitiateAuthnSessionRequest:
+    principal_name: str
+    principal_type: AuthnPrincipalType
+
+    @classmethod
+    def unmarshal_request(cls, body: dict) -> 'AuthnSessionRequest':
+        return cls(principal_name=str(body['principalName']),
+                   principal_type=AuthnPrincipalType(body['principalType']))
+
+
+@dataclass(frozen=True)
+class AuthnChallengeResponseRequest:
+    challenge_id: UUID
+    passcode: str
+
+    @classmethod
+    def unmarshal_request(cls, body: dict) -> 'AuthnChallengeResponseRequest':
+        return cls(challenge_id=UUID(body['challenge_id']),
+                   passcode=str(body['passcode']))
 
 
 @dataclass(frozen=True)

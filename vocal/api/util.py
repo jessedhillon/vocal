@@ -31,15 +31,20 @@ def message(handler):
                 },
                 'data': resp,
             }
-        elif isinstance(resp, (Response, HTTPException)):
-            errors = []
-            obj = None
-            if isinstance(resp, HTTPException):
-                errors.append(resp.text)
-                if not isinstance(resp.body, (str, bytes)):
-                    obj = resp.body
+        elif isinstance(resp, (Response, HTTPException)) or isinstance(resp, tuple):
+            if isinstance(resp, tuple):
+                resp, obj = resp
             else:
-                obj = resp.body or resp.data
+                obj = None
+
+            errors = []
+            if obj is None:
+                if isinstance(resp, HTTPException):
+                    errors.append(resp.text)
+                    if not isinstance(resp.body, (str, bytes)):
+                        obj = resp.body
+                else:
+                    obj = resp.body or resp.data
             phrase = HTTPStatus(resp.status)
             success = 200 <= resp.status < 300
             body = {
