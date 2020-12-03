@@ -3,10 +3,11 @@ import random
 from http import HTTPStatus
 from functools import wraps
 
-from aiohttp.web import Response, json_response
+from aiohttp.web import Response, json_response, middleware
 from aiohttp.web_exceptions import HTTPException
 
 from vocal.api.models.base import ViewModel
+from vocal.api.storage.record import BaseRecord, Recordset
 from vocal.util import json
 
 
@@ -84,6 +85,12 @@ def message(handler):
     return f
 
 
+@middleware
+async def message_middleware(request, handler):
+    wrapper = message(handler)
+    return await wrapper(request)
+
+
 def operation(impl):
     @wraps(impl)
     def f(*args, **kwargs):
@@ -98,12 +105,22 @@ class operation_impl(object):
         self._args = args
         self._kwargs = kwargs
         self._executed = False
+        self._returning = None
 
-    def execute(self, session):
+    async def execute(self, session):
         if self._executed:
             raise RuntimeError("attempted double execution of operation")
         self._executed = True
-        return self._impl(session, *self._args, **self._kwargs)
+        rs = await self._impl(session, *self._args, **self._kwargs)
+        if self._returning is None:
+            return rs
+        if isinstance(rs, BaseRecord):
+            return self._returning.unmarshal_record(rs)
+        return self._returning.unmarshal_recordset(rs)
+
+    def returning(self, rcls: type) -> 'operation_impl':
+        self._returning = rcls
+        return self
 
     def __repr__(self):
         return f"<operation {self._impl.__name__} *{self._args}, **{self._kwargs}>"

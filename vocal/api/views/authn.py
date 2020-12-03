@@ -3,18 +3,15 @@ from aiohttp.web import HTTPAccepted, HTTPBadRequest, HTTPOk, HTTPUnauthorized, 
 import vocal.api.operations as op
 import vocal.api.security as security
 import vocal.api.util as util
+from vocal.config import AppConfig
 from vocal.api.constants import AuthnChallengeType, AuthnPrincipalType, UserRole
-from vocal.api.models.authn import AuthnSession, AuthnChallenge, AuthnChallengeResponse
+from vocal.api.models.authn import AuthnChallenge, AuthnChallengeResponse
 from vocal.api.models.requests import AuthnChallengeResponseRequest, InitiateAuthnSessionRequest
-from vocal.api.security import Capability
-from vocal.util.web import with_context, with_session, json_response
+from vocal.api.security import AuthnSession, Capability
 
 
-@json_response
-@util.message
-@with_session(new=True)
-@with_context
-async def init_authn_session(request, session, ctx):
+@security.new_session
+async def init_authn_session(request, ctx: AppConfig, session: AuthnSession):
     sr = InitiateAuthnSessionRequest.unmarshal_request(await request.json())
 
     async with op.session(ctx) as ss:
@@ -38,12 +35,8 @@ async def init_authn_session(request, session, ctx):
     return HTTPOk()
 
 
-@json_response
-@util.message
-@with_session
-@with_context
 @security.requires(Capability.Authenticate)
-async def get_authn_challenge(request, session, ctx):
+async def get_authn_challenge(request, ctx: AppConfig, session: AuthnSession):
     if session.pending_challenge:
         raise HTTPBadRequest("cannot request a new challenge while challenges are pending")
 
@@ -57,12 +50,8 @@ async def get_authn_challenge(request, session, ctx):
             return session.pending_challenge.get_view('public')
 
 
-@json_response
-@util.message
-@with_session
-@with_context
 @security.requires(Capability.Authenticate)
-async def verify_authn_challenge(request, session, ctx):
+async def verify_authn_challenge(request, ctx: AppConfig, session: AuthnSession):
     if not session.pending_challenge:
         raise HTTPBadRequest()
 

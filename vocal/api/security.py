@@ -164,11 +164,16 @@ class SimpleCookieStorage(SimpleCookieStorage):
 def requires(*capabilities):
     def wrapper(handler):
         @wraps(handler)
-        async def f(request, *args, **kwargs):
-            session = await aiohttp_session.get_session(request)
-            if not session.has_capabilities(*capabilities):
+        async def f(request, __requires_session: AuthnSession, *args, **kwargs):
+            if not __requires_session.has_capabilities(*capabilities):
                 raise HTTPForbidden()
             else:
                 return await handler(request, *args, **kwargs)
+        f.__annotations__['__requires_session'] = AuthnSession
         return f
     return wrapper
+
+
+def new_session(handler):
+    handler.__annotations__['__new_session'] = True
+    return handler

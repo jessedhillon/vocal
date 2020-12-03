@@ -1,9 +1,11 @@
 import aioredis
 import aiohttp_session
-from aiohttp.web import Application
+from aiohttp.web import Application, Request, middleware
 
 import vocal.util as util
-from vocal.api.security import RedisStorage, SimpleCookieStorage
+from vocal.config import AppConfig
+from vocal.api.security import AuthnSession, RedisStorage, SimpleCookieStorage
+from vocal.api.util import message_middleware
 
 from . import routes
 from . import storage
@@ -33,8 +35,35 @@ async def configure(appctx):
 
 
 async def initialize(appctx):
-    app = Application()
+    @middleware
+    async def context_injection_middleware(request, handler):
+        if not handler.__annotations__:
+            return await handler(request)
+        params = {}
+
+        new_session = handler.__annotations__.pop('__new_session', False)
+        for name, t in handler.__annotations__.items():
+            if t is AppConfig:
+                params[name] = appctx
+            elif t is AuthnSession:
+                if new_session:
+                    params[name] = await aiohttp_session.new_session(request)
+                else:
+                    params[name] = await aiohttp_session.get_session(request)
+            elif t is Request:
+                continue
+            elif name == 'return':
+                continue
+            else:
+                raise RuntimeError(f"don't know how to inject {name}")
+
+        return await handler(request, **params)
+
+    app = Application(middlewares=[aiohttp_session.session_middleware(appctx.session_store.get()),
+                                   util.web.json_response_middleware,
+                                   message_middleware,
+                                   context_injection_middleware])
     app.add_routes(appctx.routes.get())
-    aiohttp_session.setup(app, appctx.session_store.get())
     app['appctx'] = appctx
+
     return app

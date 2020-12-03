@@ -1,20 +1,16 @@
-from aiohttp.web import HTTPAccepted, HTTPBadRequest, HTTPUnauthorized, Response, json_response
+from aiohttp.web import HTTPAccepted, HTTPBadRequest, HTTPUnauthorized, Response
 
 import vocal.api.operations as op
 import vocal.api.security as security
 import vocal.api.util as util
+from vocal.config import AppConfig
 from vocal.api.constants import PaymentDemandType
 from vocal.api.models.membership import SubscriptionPlan
 from vocal.api.models.requests import CreateSubscriptionPlanRequest
-from vocal.api.security import Capability
-from vocal.util.web import with_context, with_session, json_response
+from vocal.api.security import AuthnSession, Capability
 
 
-@json_response
-@util.message
-@with_session
-@with_context
-async def get_subscription_plans(request, session, ctx):
+async def get_subscription_plans(request, ctx: AppConfig, session: AuthnSession):
     async with op.session(ctx) as ss:
         plans = await op.membership.\
             get_subscription_plans().\
@@ -24,12 +20,8 @@ async def get_subscription_plans(request, session, ctx):
     return plans
 
 
-@json_response
-@util.message
-@with_session
-@with_context
 @security.requires(Capability.PlanCreate)
-async def create_subscription_plan(request, session, ctx):
+async def create_subscription_plan(request, ctx: AppConfig, session: AuthnSession):
     plan = CreateSubscriptionPlanRequest.unmarshal_request(await request.json())
     async with op.session(ctx) as ss:
         pds = []

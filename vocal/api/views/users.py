@@ -1,23 +1,19 @@
 from uuid import uuid4, UUID
 
-from aiohttp.web import HTTPBadRequest, HTTPForbidden, HTTPNotFound, HTTPOk
+from aiohttp.web import HTTPBadRequest, HTTPForbidden, HTTPNotFound, HTTPOk, Request
 
 import vocal.api.operations as op
 import vocal.api.security as security
 import vocal.api.util as util
+from vocal.config import AppConfig
 from vocal.api.constants import AuthnChallengeType, ContactMethodType
-from vocal.api.models.authn import AuthnChallenge, AuthnChallengeResponse, AuthnSession
+from vocal.api.models.authn import AuthnChallenge, AuthnChallengeResponse
 from vocal.api.models.requests import AuthnChallengeResponseRequest
-from vocal.api.security import Capability
-from vocal.util.web import with_context, with_session, json_response
+from vocal.api.security import AuthnSession, Capability
 
 
-@json_response
-@util.message
-@with_session
-@with_context
 @security.requires(Capability.Authenticate)
-async def get_contact_method_verify_challenge(request, session, ctx):
+async def get_contact_method_verify_challenge(request, ctx: AppConfig, session: AuthnSession):
     try:
         user_profile_id = UUID(request.match_info['user_profile_id'])
         contact_method_id = UUID(request.match_info['contact_method_id'])
@@ -48,12 +44,8 @@ async def get_contact_method_verify_challenge(request, session, ctx):
         return session.pending_challenge.get_view('public')
 
 
-@json_response
-@util.message
-@with_session
-@with_context
 @security.requires(Capability.Authenticate)
-async def verify_contact_method(request, session, ctx):
+async def verify_contact_method(request, ctx: AppConfig, session: AuthnSession):
     try:
         user_profile_id = UUID(request.match_info['user_profile_id'])
         contact_method_id = UUID(request.match_info['contact_method_id'])
