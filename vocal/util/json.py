@@ -6,11 +6,15 @@ import uuid
 
 import psycopg2.extras
 
+from vocal.api.message import ResultMessage
+
 
 class JsonEncoder(json.JSONEncoder):
     def default(self, obj):
         if hasattr(obj, 'as_dict'):
             return obj.as_dict()
+        if isinstance(obj, ResultMessage):
+            return obj.marshal()
 
         if isinstance(obj, set):
             return list(obj)

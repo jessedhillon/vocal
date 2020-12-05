@@ -51,7 +51,8 @@ class AuthnTestCase(DatabaseTestCase):
         resp = await self.client.request('GET', '/authn/challenge')
         j = await resp.json()
         assert resp.status == 400
-        assert "email j****@dhillon.com must be verified first" in j['status']['errors']
+        assert "email j****@dhillon.com must be verified first" in\
+               [e['message'] for e in j['status']['errors']]
 
     async def test_get_authn_challenge(self):
         async with op.session(self.appctx) as session:
@@ -90,7 +91,7 @@ class AuthnTestCase(DatabaseTestCase):
         assert resp.status == 401
         j = await resp.json()
         assert not j['status']['success']
-        assert 'Incorrect passcode' in j['status']['errors']
+        assert 'Incorrect passcode' in [e['message'] for e in j['status']['errors']]
 
         session = self.get_session()
         challenge = session['pending_challenge']

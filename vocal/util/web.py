@@ -5,6 +5,7 @@ import aiohttp_session
 import aiohttp.web as web
 
 from .json import JsonEncoder
+from vocal.api.message import ResultMessage
 
 
 def json_response(handler=None, encoder_cls=JsonEncoder):
@@ -17,7 +18,7 @@ def json_response(handler=None, encoder_cls=JsonEncoder):
     @wraps(handler)
     async def f(*args, **kwargs):
         resp = await handler(*args, **kwargs)
-        if isinstance(resp, (list, dict, str)):
+        if isinstance(resp, (list, dict, str, ResultMessage)):
             return web.json_response(resp, status=200, dumps=encode)
         return resp
     return f

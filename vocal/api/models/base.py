@@ -24,7 +24,7 @@ class ViewModel(object):
         raise NotImplementedError()
 
 
-def define_view(*fields: list[str], name: str):
+def define_view(*fields: str, name: str):
     def f(cls):
         if not hasattr(cls, '__views__'):
             cls.__views__ = {}

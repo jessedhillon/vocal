@@ -6,6 +6,8 @@ from functools import wraps
 from aiohttp.web import Response, json_response, middleware
 from aiohttp.web_exceptions import HTTPException
 
+from vocal.api.message import ErrorMessage, MessageStatus, ResultMessage, ScalarResultMessage,\
+        VectorResultMessage, PagedResultMessage
 from vocal.api.models.base import ViewModel
 from vocal.api.storage.record import BaseRecord, Recordset
 from vocal.util import json
@@ -23,15 +25,12 @@ def message(handler):
         except ValueError as e:
             resp = e
 
-        if isinstance(resp, (type(None), list, dict, str, ViewModel)):
-            return {
-                'status': {
-                    'success': True,
-                    'message': HTTPStatus(200).phrase,
-                    'errors': [],
-                },
-                'data': resp,
-            }
+        if isinstance(resp, (type(None), str, ViewModel)):
+            status = MessageStatus(success=True, message=HTTPStatus(200).phrase)
+            return ScalarResultMessage(status=status, data=resp)
+        elif isinstance(resp, (list, dict)):
+            status = MessageStatus(success=True, message=HTTPStatus(200).phrase)
+            return VectorResultMessage(status=status, data=resp)
         elif isinstance(resp, (Response, HTTPException)) or isinstance(resp, tuple):
             if isinstance(resp, tuple):
                 resp, obj = resp
@@ -41,27 +40,29 @@ def message(handler):
             errors = []
             if obj is None:
                 if isinstance(resp, HTTPException):
-                    errors.append(resp.text)
+                    if resp.status >= 400:
+                        errors.append(ErrorMessage(message=resp.text))
                     if not isinstance(resp.body, (str, bytes)):
                         obj = resp.body
                 else:
                     obj = resp.body or resp.data
-            phrase = HTTPStatus(resp.status)
-            success = 200 <= resp.status < 300
-            body = {
-                'status': {
-                    'success': success,
-                    'message': resp.reason,
-                    'errors': errors,
-                },
-                'data': obj,
-            }
+
+            success = (200 <= resp.status < 300)
+            status = MessageStatus(success=success, message=resp.reason, errors=errors)
             resp.headers.pop('Content-Type')
-            return json_response(body,
-                                 status=resp.status,
-                                 reason=resp.reason,
-                                 dumps=json.encode,
-                                 headers=resp.headers)
+
+            if isinstance(obj, (list, dict)):
+                return json_response(VectorResultMessage(status=status, data=obj),
+                                     status=resp.status,
+                                     reason=resp.reason,
+                                     dumps=json.encode,
+                                     headers=resp.headers)
+            else:
+                return json_response(ScalarResultMessage(status=status, data=obj),
+                                     status=resp.status,
+                                     reason=resp.reason,
+                                     dumps=json.encode,
+                                     headers=resp.headers)
         elif isinstance(resp, ValueError):
             reason = "Validation Failed"
             body = {
@@ -71,17 +72,13 @@ def message(handler):
                     'errors': [str(resp)]
                 }
             }
-            return json_response(body, status=400, reason=reason, dumps=json.encode)
+            status = MessageStatus(success=False, message=reason,
+                                   errors=[ErrorMessage(message=str(resp))])
+            return json_response(ResultMessage(status=status), status=400,
+                                 reason=reason, dumps=json.encode)
         else:
-            return json_response({
-                    'status': {
-                        'success': False,
-                        'message': "unknown response type",
-                        'errors': [],
-                    },
-                    'data': None
-                },
-                status=500)
+            status = MessageStatus(success=False, message="unknown response type")
+            return json_response(ResultMessage(status=status), status=500)
     return f
 
 
