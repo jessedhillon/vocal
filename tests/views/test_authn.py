@@ -5,10 +5,10 @@ from vocal.api.constants import UserRole
 from vocal.api.models import user_profile
 from vocal.api.security import Capability
 
-from .. import DatabaseTestCase
+from .. import AppTestCase
 
 
-class AuthnTestCase(DatabaseTestCase):
+class AuthnTestCase(AppTestCase):
     async def test_start_session(self):
         async with op.session(self.appctx) as session:
             profile_id = await op.user_profile.create_user_profile(

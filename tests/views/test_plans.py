@@ -5,9 +5,9 @@ import vocal.api.operations as op
 from vocal.api.constants import PaymentDemandType, PaymentDemandPeriod, UserRole
 from vocal.api.models.membership import SubscriptionPlan
 
-from .. import DatabaseTestCase
+from .. import AppTestCase
 
-class PlansViewTestCase(DatabaseTestCase):
+class PlansViewTestCase(AppTestCase):
     async def test_get_plans(self):
         async with op.session(self.appctx) as ss:
             plan_id = await op.membership.create_subscription_plan(

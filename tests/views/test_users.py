@@ -4,10 +4,10 @@ import vocal.api.operations as op
 from vocal.api.constants import UserRole
 from vocal.api.models import user_profile
 
-from .. import DatabaseTestCase
+from .. import AppTestCase
 
 
-class UsersViewTestCase(DatabaseTestCase):
+class UsersViewTestCase(AppTestCase):
     async def test_verify_email_contact_method(self):
         async with op.session(self.appctx) as session:
             profile_id = await op.user_profile.\
