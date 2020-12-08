@@ -4,7 +4,7 @@ from typing import Optional, Union
 from uuid import UUID
 
 from vocal.api.constants import AuthnPrincipalType, PaymentDemandType, ISO4217Currency,\
-    PeriodicPaymentDemandPeriod
+    PaymentDemandPeriod
 
 
 @dataclass(frozen=True)
@@ -34,7 +34,7 @@ class CreateSubscriptionPlanRequest:
     @dataclass(frozen=True)
     class _create_periodic_payment_demand:
         demand_type: PaymentDemandType
-        period: PeriodicPaymentDemandPeriod
+        period: PaymentDemandPeriod
         amount: Decimal
         iso_currency: Optional[ISO4217Currency]
         non_iso_currency: Optional[str]
@@ -60,7 +60,7 @@ class CreateSubscriptionPlanRequest:
                 pds.append(
                     cls._create_periodic_payment_demand(
                         demand_type=pdtype,
-                        period=PeriodicPaymentDemandPeriod(pd['period']),
+                        period=PaymentDemandPeriod(pd['period']),
                         amount=Decimal(pd['amount']),
                         iso_currency=ISO4217Currency(pd['iso_currency'])\
                                      if pd.get('iso_currency') else None,

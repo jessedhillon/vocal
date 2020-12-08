@@ -1,7 +1,7 @@
 from decimal import Decimal
 
 import vocal.api.operations as op
-from vocal.api.models.membership import PaymentDemandType, PeriodicPaymentDemandPeriod,\
+from vocal.api.models.membership import PaymentDemandType, PaymentDemandPeriod,\
     SubscriptionPlan
 
 from .. import DatabaseTestCase
@@ -17,11 +17,11 @@ class MembershipOperationsTestCase(DatabaseTestCase):
                             "- Access to episodes one week before non-subscribers\n"
                             "- Monthly members-only episode\n",
                 payment_demands=(
-                    (PaymentDemandType.Periodic, PeriodicPaymentDemandPeriod.Quarterly,
+                    (PaymentDemandType.Periodic, PaymentDemandPeriod.Quarterly,
                      Decimal('25.0'), 'USD'),
-                    (PaymentDemandType.Periodic, PeriodicPaymentDemandPeriod.Annually,
+                    (PaymentDemandType.Periodic, PaymentDemandPeriod.Annually,
                      Decimal('90.0'), 'USD'),
-                    (PaymentDemandType.Periodic, PeriodicPaymentDemandPeriod.Monthly,
+                    (PaymentDemandType.Periodic, PaymentDemandPeriod.Monthly,
                      Decimal('10.0'), 'USD'),
                     (PaymentDemandType.Immediate, Decimal('250.0'), 'USD'))).\
                 execute(ss)
@@ -35,9 +35,9 @@ class MembershipOperationsTestCase(DatabaseTestCase):
         assert plans[2].demand_type is PaymentDemandType.Periodic
         assert plans[3].demand_type is PaymentDemandType.Immediate
 
-        assert plans[0].period is PeriodicPaymentDemandPeriod.Monthly
-        assert plans[1].period is PeriodicPaymentDemandPeriod.Quarterly
-        assert plans[2].period is PeriodicPaymentDemandPeriod.Annually
+        assert plans[0].period is PaymentDemandPeriod.Monthly
+        assert plans[1].period is PaymentDemandPeriod.Quarterly
+        assert plans[2].period is PaymentDemandPeriod.Annually
         assert plans[3].period is None
 
         assert plans[0].amount == Decimal('10.0')
@@ -57,11 +57,11 @@ class MembershipOperationsTestCase(DatabaseTestCase):
                             "- Access to episodes one week before non-subscribers\n"
                             "- Monthly members-only episode\n",
                 payment_demands=(
-                    (PaymentDemandType.Periodic, PeriodicPaymentDemandPeriod.Quarterly,
+                    (PaymentDemandType.Periodic, PaymentDemandPeriod.Quarterly,
                      Decimal('25.0'), 'USD'),
-                    (PaymentDemandType.Periodic, PeriodicPaymentDemandPeriod.Annually,
+                    (PaymentDemandType.Periodic, PaymentDemandPeriod.Annually,
                      Decimal('90.0'), 'USD'),
-                    (PaymentDemandType.Periodic, PeriodicPaymentDemandPeriod.Monthly,
+                    (PaymentDemandType.Periodic, PaymentDemandPeriod.Monthly,
                      Decimal('10.0'), 'USD'),
                     (PaymentDemandType.Immediate, Decimal('250.0'), 'USD'))).\
                 execute(ss)

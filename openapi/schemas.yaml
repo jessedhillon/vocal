@@ -71,6 +71,13 @@ RelativeDateTime:
       dayOfWeek: mon
       weekOfMonth: 1
       monthOfYear: 11
+SubscriptionStatus:
+  type: string
+  enum:
+    - current
+    - paused
+    - expired
+    - cancelled
 Feed:
   type: object
   properties:

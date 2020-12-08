@@ -3,7 +3,7 @@ from decimal import Decimal
 from typing import Optional
 from uuid import UUID
 
-from vocal.api.constants import ISO4217Currency, PaymentDemandType, PeriodicPaymentDemandPeriod,\
+from vocal.api.constants import ISO4217Currency, PaymentDemandType, PaymentDemandPeriod,\
         SubscriptionPlanStatus
 from vocal.api.storage.record import Recordset, SubscriptionPlanPaymentDemandRecord
 
@@ -18,7 +18,7 @@ class PaymentDemand(ViewModel):
 
 @dataclass(frozen=True)
 class PeriodicPaymentDemand(PaymentDemand):
-    period: PeriodicPaymentDemandPeriod
+    period: PaymentDemandPeriod
     iso_currency: Optional[ISO4217Currency]
     non_iso_currency: Optional[str]
     amount: Decimal

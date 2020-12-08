@@ -2,7 +2,7 @@ import json
 from decimal import Decimal
 
 import vocal.api.operations as op
-from vocal.api.constants import PaymentDemandType, PeriodicPaymentDemandPeriod, UserRole
+from vocal.api.constants import PaymentDemandType, PaymentDemandPeriod, UserRole
 from vocal.api.models.membership import SubscriptionPlan
 
 from .. import DatabaseTestCase
@@ -17,11 +17,11 @@ class PlansViewTestCase(DatabaseTestCase):
                             "- Access to episodes one week before non-subscribers\n"
                             "- Monthly members-only episode\n",
                 payment_demands=(
-                    (PaymentDemandType.Periodic, PeriodicPaymentDemandPeriod.Quarterly,
+                    (PaymentDemandType.Periodic, PaymentDemandPeriod.Quarterly,
                      Decimal('25.0'), 'USD'),
-                    (PaymentDemandType.Periodic, PeriodicPaymentDemandPeriod.Annually,
+                    (PaymentDemandType.Periodic, PaymentDemandPeriod.Annually,
                      Decimal('90.0'), 'USD'),
-                    (PaymentDemandType.Periodic, PeriodicPaymentDemandPeriod.Monthly,
+                    (PaymentDemandType.Periodic, PaymentDemandPeriod.Monthly,
                      Decimal('10.0'), 'USD'),
                     (PaymentDemandType.Immediate, Decimal('250.0'), 'USD'))).\
                 execute(ss)

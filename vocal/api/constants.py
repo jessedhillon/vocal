@@ -38,7 +38,7 @@ class PaymentDemandType(Enum):
     PayAsYouGo = 'pay-go'
 
 
-class PeriodicPaymentDemandPeriod(Enum):
+class PaymentDemandPeriod(Enum):
     Daily = 'daily'
     Weekly = 'weekly'
     Monthly = 'monthly'

@@ -6,8 +6,7 @@ Create Date: ${create_date}
 
 """
 from alembic import op
-from sqlalchemy import Column, ForeignKey, ForeignKeyConstraint, Boolean, DateTime, Integer,\
-        String, func as f
+from sqlalchemy import Column, ForeignKey, ForeignKeyConstraint, Boolean, DateTime, Integer, String, func as f
 from sqlalchemy.dialects.postgresql import ENUM as Enum, JSONB, UUID
 ${imports if imports else ""}
 
@@ -21,6 +20,7 @@ branch_labels = ${repr(branch_labels)}
 depends_on = ${repr(depends_on)}
 
 utcnow = f.timezone('UTC', f.now())
+v4_uuid = f.gen_random_uuid()
 
 
 def upgrade():

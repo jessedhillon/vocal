@@ -11,7 +11,7 @@ from sqlalchemy.engine.result import Result
 from sqlalchemy.engine.row import Row
 
 from vocal.api.constants import ContactMethodType, ISO4217Currency, SubscriptionPlanStatus,\
-        PaymentDemandType, PeriodicPaymentDemandPeriod, UserRole
+        PaymentDemandType, PaymentDemandPeriod, UserRole
 
 
 class BaseRecord(object):
@@ -114,7 +114,7 @@ class SubscriptionPlanPaymentDemandRecord(BaseRecord):
     description: str
     payment_demand_id: UUID
     demand_type: PaymentDemandType
-    period: Optional[PeriodicPaymentDemandPeriod]
+    period: Optional[PaymentDemandPeriod]
     amount: Decimal
     iso_currency: Optional[ISO4217Currency]
     non_iso_currency: Optional[str]
@@ -131,7 +131,7 @@ class SubscriptionPlanPaymentDemandRecord(BaseRecord):
             description=row[4],
             payment_demand_id=UUID(row[5]),
             demand_type=PaymentDemandType(row[6]),
-            period=PeriodicPaymentDemandPeriod(row[7]) if row[7] else None,
+            period=PaymentDemandPeriod(row[7]) if row[7] else None,
             amount=row[8],
             iso_currency=ISO4217Currency(row[9]) if row[9] else None,
             non_iso_currency=row[10])

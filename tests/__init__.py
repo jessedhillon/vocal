@@ -11,6 +11,7 @@ from aiohttp.test_utils import AioHTTPTestCase, TestClient, setup_test_loop
 
 import vocal.api.app
 import vocal.api.operations as op
+import vocal.api.storage as storage
 import vocal.config as config
 import vocal.log
 from vocal.util.asyncio import synchronously
