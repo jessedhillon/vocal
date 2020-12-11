@@ -2,6 +2,7 @@ import aioredis
 import aiohttp_session
 from aiohttp.web import Application, Request, middleware
 
+import vocal.payments
 import vocal.util as util
 from vocal.config import AppConfig
 from vocal.api.security import AuthnSession, RedisStorage, SimpleCookieStorage
@@ -30,6 +31,7 @@ async def configure(appctx):
         else:
             raise ValueError(f"unsupported session storage: {sc['storage']}")
 
+    await vocal.payments.configure(appctx)
     await routes.configure(appctx)
     assert appctx.ready
 

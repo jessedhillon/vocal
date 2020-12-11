@@ -11,6 +11,7 @@ from vocal.api.models.user_profile import UserProfile
 from vocal.api.security import AuthnSession, Capability
 from vocal.config import AppConfig
 from vocal.constants import AuthnChallengeType, ContactMethodType, PaymentMethodStatus
+from vocal.payments.models import PaymentCredential
 
 
 @security.requires(Capability.Authenticate)
@@ -77,3 +78,61 @@ async def verify_contact_method(request, ctx: AppConfig, session: AuthnSession):
 
     session.clear_pending_challenge()
     return HTTPOk()
+
+
+@security.requires(Capability.PaymentMethodCreate)
+async def add_payment_method(request, ctx: AppConfig, session: AuthnSession):
+    try:
+        user_profile_id = UUID(request.match_info['user_profile_id'])
+    except ValueError:
+        raise HTTPNotFound()
+
+    if user_profile_id != session.user_profile_id:
+        raise HTTPForbidden()
+
+    async with op.session(ctx) as ss:
+        # fail if user's email address is not verified
+        u = await op.user_profile.get_user_profile(user_profile_id=user_profile_id).execute(ss)
+        if not u.email_contact_method_verified:
+            raise ValueError("email address must be verified first")
+
+        addpmrq = AddPaymentMethodRequest.unmarshal_request(await request.json())
+        payments = ctx.payments.get()
+        processor = payments[addpmrq.processor_id]
+
+        pp = await op.user_profile.\
+            get_payment_profile(user_profile_id=user_profile_id,
+                                processor_id=addpmrq.processor_id).\
+            execute(ss)
+
+        if pp is not None:
+            pp_id = pp.payment_profile_id
+            cust_id = pp.processor_customer_profile_id
+        else:
+            cust_id = await processor.create_customer_profile(
+                u.user_profile_id, u.name, u.email_address, u.phone_number, address=None)
+            pp_id = await op.user_profile.\
+                add_payment_profile(
+                    user_profile_id=u.user_profile_id,
+                    processor_id=processor.processor_id,
+                    processor_customer_profile_id=cust_id).\
+                execute(ss)
+
+    async with op.session(ctx) as ss:
+        method_id = await processor.\
+            add_customer_payment_method(cust_id, addpmrq.payment_credential)
+
+        pm_id = await op.user_profile.\
+            add_payment_method(
+                user_profile_id=u.user_profile_id,
+                payment_profile_id=pp_id,
+                processor_payment_method_id=method_id,
+                payment_method_type=addpmrq.payment_credential.method_type,
+                payment_method_family=addpmrq.payment_credential.method_family,
+                display_name=addpmrq.payment_credential.display_name,
+                safe_account_number_fragment=\
+                    addpmrq.payment_credential.safe_account_number_fragment,
+                expires_after=addpmrq.payment_credential.expire_after_date).\
+            execute(ss)
+
+    return pm_id

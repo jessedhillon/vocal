@@ -93,7 +93,7 @@ class AuthnTestCase(AppTestCase):
         resp = await self.client.request('POST', '/authn/challenge', json=chresp)
         session = self.get_session()
         assert resp.status == 200
-        assert set(session['capabilities']) == set(['profile.list'])
+        assert set(session['capabilities']) == set(['profile.list', 'payment_method.add'])
 
         resp = await self.client.request('POST', '/authn/challenge', json=chresp)
         assert resp.status == 403

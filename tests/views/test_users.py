@@ -58,3 +58,92 @@ class UsersViewTestCase(AppTestCase):
                                        user_profile_id=profile.user_profile_id).\
                     execute(session)
             assert cm.verified
+
+    async def test_add_payment_method(self):
+        profile_id = await self.authenticate_as(UserRole.Subscriber)
+        body = {
+            'processorId': 'com.example',
+            'paymentCredential': {
+                'methodType': 'credit_card',
+                'cardNumber': '4242424242424242',
+                'expMonth': 12,
+                'expYear': 2023,
+                'cvv': '444',
+            }
+        }
+        resp = await self.client.request(
+            'POST',
+            f'/users/{profile_id}/paymentMethods',
+            json=body)
+        j = await resp.json()
+        pm_id = j['data']
+
+        payments = self.appctx.payments.get()
+        mock = payments['com.example']
+
+        async with op.session(self.appctx) as ss:
+            pp = await op.user_profile.get_payment_profile(
+                    user_profile_id=profile_id,
+                    processor_id='com.example').\
+                execute(ss)
+            pms = await op.user_profile.get_payment_methods(
+                    user_profile_id=profile_id,
+                    payment_profile_id=pp.payment_profile_id).\
+                execute(ss)
+        assert pp.processor_customer_profile_id in mock._store
+        for pp_id, pmeths in pms.group_by('payment_profile_id').items():
+            assert pp_id == pp.payment_profile_id
+            assert len(pmeths) == 1
+            for pm in pmeths:
+                assert str(pm.payment_method_id) == pm_id
+
+    async def test_add_multiple_payment_method(self):
+        profile_id = await self.authenticate_as(UserRole.Subscriber)
+        bodies = [{
+            'processorId': 'com.example',
+            'paymentCredential': {
+                'methodType': 'credit_card',
+                'cardNumber': '4242424242424242',
+                'expMonth': 12,
+                'expYear': 2023,
+                'cvv': '444',
+            }
+        },{
+            'processorId': 'com.example',
+            'paymentCredential': {
+                'methodType': 'credit_card',
+                'cardNumber': '4000056655665556',
+                'expMonth': 12,
+                'expYear': 2022,
+                'cvv': '555',
+            }
+        }]
+
+        pm_ids = []
+        for b in bodies:
+            resp = await self.client.request(
+                'POST',
+                f'/users/{profile_id}/paymentMethods',
+                json=b)
+            j = await resp.json()
+            pm_ids.append(j['data'])
+
+        payments = self.appctx.payments.get()
+        mock = payments['com.example']
+
+        import pdb; pdb.set_trace()
+        async with op.session(self.appctx) as ss:
+            pp = await op.user_profile.get_payment_profile(
+                    user_profile_id=profile_id,
+                    processor_id='com.example').\
+                execute(ss)
+            pms = await op.user_profile.get_payment_methods(
+                    user_profile_id=profile_id,
+                    payment_profile_id=pp.payment_profile_id).\
+                execute(ss)
+        assert pp.processor_customer_profile_id in mock._store
+        for pp_id, pmeths in pms.group_by('payment_profile_id').items():
+            assert pp_id == pp.payment_profile_id
+            assert len(pmeths) == 2
+            for pm in pmeths:
+                assert str(pm.payment_method_id) in pm_ids

@@ -5,6 +5,8 @@ import pytest
 import vocal.api.operations as op
 from vocal.constants import UserRole
 
+from sqlalchemy.exc import IntegrityError
+
 from .. import DatabaseTestCase
 
 
@@ -104,3 +106,62 @@ class UserProfileOperationsTestCase(DatabaseTestCase):
             ])
         assert str(excinfo.value) == f"user profile with phone number {pn} already exists"
 
+    async def test_create_and_get_payment_profile(self):
+        async with op.session(self.appctx) as ss:
+            profile_id = await op.user_profile.\
+                create_user_profile('Jesse',
+                                    'Jesse Dhillon',
+                                    '123foobar^#@',
+                                    UserRole.Subscriber,
+                                    'jesse@dhillon.com',
+                                    '+14155551234').\
+                execute(ss)
+            u = await op.user_profile.get_user_profile(user_profile_id=profile_id).execute(ss)
+            pp1_id = await op.user_profile.\
+                    add_payment_profile(
+                        user_profile_id=profile_id,
+                        processor_id='com.example',
+                        processor_customer_profile_id='foobar').\
+                    execute(ss)
+            assert pp1_id is not None
+
+            pp2_id = await op.user_profile.\
+                    add_payment_profile(
+                        user_profile_id=profile_id,
+                        processor_id='com.example2',
+                        processor_customer_profile_id='foobar2').\
+                    execute(ss)
+            assert pp2_id is not None and pp1_id is not pp2_id
+
+            for pp_id, proc_id in ((pp1_id, 'com.example'), (pp2_id, 'com.example2')):
+                pp = await op.user_profile.\
+                    get_payment_profile(user_profile_id=profile_id, processor_id=proc_id).\
+                    execute(ss)
+                assert pp.payment_profile_id == pp_id
+                assert pp.processor_id == proc_id
+
+    async def test_cannot_create_payment_profile_duplicate_processor(self):
+        async with op.session(self.appctx) as ss:
+            profile_id = await op.user_profile.\
+                create_user_profile('Jesse',
+                                    'Jesse Dhillon',
+                                    '123foobar^#@',
+                                    UserRole.Subscriber,
+                                    'jesse@dhillon.com',
+                                    '+14155551234').\
+                execute(ss)
+
+            await op.user_profile.\
+                add_payment_profile(
+                    user_profile_id=profile_id,
+                    processor_id='com.example',
+                    processor_customer_profile_id='foobar').\
+                execute(ss)
+
+            with pytest.raises(IntegrityError):
+                await op.user_profile.\
+                    add_payment_profile(
+                        user_profile_id=profile_id,
+                        processor_id='com.example',
+                        processor_customer_profile_id='foo-bar').\
+                    execute(ss)

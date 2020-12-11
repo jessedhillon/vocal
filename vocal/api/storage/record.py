@@ -69,6 +69,51 @@ class UserProfileRecord(BaseRecord):
                                  phone_number_contact_method_verified=row[9],
                                  phone_number=row[10])
 
+@dataclass(frozen=True)
+class PaymentProfileRecord(BaseRecord):
+    user_profile_id: UUID
+    payment_profile_id: UUID
+    processor_id: str
+    processor_customer_profile_id: str
+
+    @classmethod
+    def unmarshal_row(cls, row: Row) -> 'PaymentProfileRecord':
+        return cls(user_profile_id=UUID(row[0]),
+                   payment_profile_id=UUID(row[1]),
+                   processor_id=row[2],
+                   processor_customer_profile_id=row[3])
+
+
+@dataclass(frozen=True)
+class PaymentMethodRecord(BaseRecord):
+    user_profile_id: UUID
+    payment_profile_id: UUID
+    processor_id: str
+    processor_customer_profile_id: str
+    payment_method_id: UUID
+    processor_payment_method_id: UUID
+    payment_method_type: PaymentMethodType
+    payment_method_family: str
+    display_name: str
+    safe_account_number_fragment: str
+    status: PaymentMethodStatus
+    expires_after: datetime
+
+    @classmethod
+    def unmarshal_row(cls, row: Row) -> 'PaymentMethodRecord':
+        return cls(user_profile_id=UUID(row[0]),
+                   payment_profile_id=UUID(row[1]),
+                   processor_id=row[2],
+                   processor_customer_profile_id=row[3],
+                   payment_method_id=UUID(row[4]),
+                   processor_payment_method_id=row[5],
+                   payment_method_type=PaymentMethodType(row[6]),
+                   payment_method_family=row[7],
+                   display_name=row[8],
+                   safe_account_number_fragment=row[9],
+                   status=PaymentMethodStatus(row[10]),
+                   expires_after=row[11])
+
 
 @dataclass(frozen=True)
 class ContactMethodRecord(BaseRecord):

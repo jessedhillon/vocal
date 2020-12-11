@@ -19,7 +19,7 @@ subscription_status = Enum('current', 'paused', 'expired', 'cancelled',
                            name='subscription_status', create_type=False)
 payment_method_type = Enum('credit_card', 'cryptocurrency', 'eft', 'manual',
                            name='payment_method_type', create_type=False)
-payment_method_status = Enum('current', 'expired',
+payment_method_status = Enum('current', 'expired', 'invalid',
                              name='payment_method_status', create_type=False)
 utcnow = f.timezone('UTC', f.now())
 v4_uuid = f.gen_random_uuid()
@@ -126,15 +126,23 @@ payment_profile = Table(
     Column('user_profile_id', UUID,
            ForeignKey('user_profile.user_profile_id'), primary_key=True),
     Column('payment_profile_id', UUID, primary_key=True, server_default=v4_uuid),
-    Column('processor', String, nullable=False),
-    Column('processor_customer_profile_id', String),
+    Column('processor_id', String, nullable=False),
+    Column('processor_customer_profile_id', String))
+
+payment_method = Table(
+    'payment_method',
+    metadata,
+    Column('user_profile_id', UUID,
+           ForeignKey('user_profile.user_profile_id'), primary_key=True),
+    Column('payment_profile_id', UUID, primary_key=True, server_default=v4_uuid),
+    Column('payment_method_id', UUID, primary_key=True, server_default=v4_uuid),
     Column('processor_payment_method_id', String),
-    Column('payment_method_type', String),
-    Column('payment_family', String),
+    Column('payment_method_type', payment_method_type),
+    Column('payment_method_family', String),
     Column('display_name', String),
     Column('safe_account_number_fragment', String),
-    Column('status', payment_method_status, nullable=False,
-           server_default=literal('current')),
+    Column('status', payment_method_status, nullable=False, server_default=literal('current')),
+    Column('expires_after', DateTime),
     ForeignKeyConstraint(['user_profile_id', 'payment_profile_id'],
                          ['payment_profile.user_profile_id',
                           'payment_profile.payment_profile_id']))
@@ -146,6 +154,7 @@ payment_transaction = Table(
     Column('user_profile_id', UUID,
            ForeignKey('user_profile.user_profile_id'), nullable=False),
     Column('payment_profile_id', UUID, nullable=True),
+    Column('payment_method_id', UUID, nullable=True),
     Column('transacted_at', DateTime, nullable=False, server_default=utcnow),
     Column('success', Boolean, nullable=False),
     Column('processor_transaction_id', String),
@@ -153,7 +162,10 @@ payment_transaction = Table(
     Column('processor_response_raw', JSONB),
     ForeignKeyConstraint(['user_profile_id', 'payment_profile_id'],
                          ['payment_profile.user_profile_id',
-                          'payment_profile.payment_profile_id']))
+                          'payment_profile.payment_profile_id']),
+    ForeignKeyConstraint(['user_profile_id', 'payment_profile_id', 'payment_method_id'],
+                         ['payment_method.user_profile_id', 'payment_method.payment_profile_id',
+                          'payment_method.payment_method_id']))
 
 subscription_payment = Table(
     'subscription_payment',

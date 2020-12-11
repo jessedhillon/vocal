@@ -21,14 +21,16 @@ class Capability(Enum):
     Authenticate = 'authn'
     ProfileList = 'profile.list'
     PlanCreate = 'plan.create'
+    PaymentMethodCreate = 'payment_method.create'
 
 
 RoleCapability = {
-    UserRole.Superuser: {Capability.Authenticate, Capability.ProfileList, Capability.PlanCreate},
+    UserRole.Superuser: {Capability.Authenticate, Capability.ProfileList,
+                         Capability.PlanCreate, Capability.PaymentMethodCreate},
     UserRole.Manager: {Capability.ProfileList},
     UserRole.Creator: {Capability.ProfileList},
-    UserRole.Subscriber: {Capability.ProfileList},
-    UserRole.Member: {Capability.ProfileList},
+    UserRole.Subscriber: {Capability.ProfileList, Capability.PaymentMethodCreate},
+    UserRole.Member: {Capability.ProfileList, Capability.PaymentMethodCreate},
 }
 
 

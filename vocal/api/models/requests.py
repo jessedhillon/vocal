@@ -5,6 +5,7 @@ from uuid import UUID
 
 from vocal.constants import AuthnPrincipalType, PaymentDemandType, ISO4217Currency,\
     PaymentDemandPeriod
+from vocal.payments.models import PaymentCredential
 
 
 @dataclass(frozen=True)
@@ -27,6 +28,18 @@ class AuthnChallengeResponseRequest:
     def unmarshal_request(cls, body: dict) -> 'AuthnChallengeResponseRequest':
         return cls(challenge_id=UUID(body['challenge_id']),
                    passcode=str(body['passcode']))
+
+
+@dataclass(frozen=True)
+class AddPaymentMethodRequest:
+    processor_id: str
+    payment_credential: PaymentCredential
+
+    @classmethod
+    def unmarshal_request(cls, body: dict) -> 'AddPaymentMethodRequest':
+        return cls(
+            processor_id=body['processorId'],
+            payment_credential=PaymentCredential.unmarshal_request(body['paymentCredential']))
 
 
 @dataclass(frozen=True)

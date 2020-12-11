@@ -1,6 +1,6 @@
 from datetime import datetime
 from uuid import UUID
-from typing import Union
+from typing import Optional, Union
 
 import sqlalchemy.exc
 from sqlalchemy import func as f
@@ -9,9 +9,10 @@ from sqlalchemy.sql.expression import alias, exists, false, join, literal, selec
 
 from vocal.constants import ContactMethodType, PaymentMethodType, PaymentMethodStatus, UserRole
 from vocal.api.storage.record import UserProfileRecord, EmailContactMethodRecord,\
-        PhoneContactMethodRecord
+        PaymentMethodRecord, PaymentProfileRecord, PhoneContactMethodRecord, Recordset
 from vocal.api.storage.sql import user_profile, user_auth, contact_method, email_contact_method,\
-        phone_contact_method
+        phone_contact_method, payment_profile, payment_method
+from vocal.api.util import operation
 
 
 @operation
@@ -213,3 +214,94 @@ async def mark_contact_method_verified(session: AsyncSession, contact_method_id:
         raise ValueError(f"no unverified contact method exists with "
                           "contact_method_id {contact_method_id!s}")
     assert c == 1
+
+
+@operation
+async def add_payment_profile(session: AsyncSession, user_profile_id: UUID, processor_id: str,
+                              processor_customer_profile_id: str
+                              ) -> UUID:
+    q = payment_profile.\
+        insert().\
+        values(user_profile_id=str(user_profile_id),
+               processor_id=processor_id,
+               processor_customer_profile_id=processor_customer_profile_id).\
+        returning(payment_profile.c.payment_profile_id)
+    rs = await session.execute(q)
+    return UUID(rs.scalar())
+
+
+@operation
+async def add_payment_method(session: AsyncSession, user_profile_id: UUID,
+                             payment_profile_id: UUID, processor_payment_method_id: str,
+                             payment_method_type: PaymentMethodType, payment_method_family: str,
+                             display_name: str, safe_account_number_fragment: str,
+                             expires_after: datetime
+                             ) -> UUID:
+    q = payment_method.\
+        insert().\
+        values(user_profile_id=str(user_profile_id),
+               payment_profile_id=str(payment_profile_id),
+               processor_payment_method_id=processor_payment_method_id,
+               payment_method_type=payment_method_type.value,
+               payment_method_family=payment_method_family,
+               display_name=display_name,
+               safe_account_number_fragment=safe_account_number_fragment,
+               status=PaymentMethodStatus.Current.value,
+               expires_after=expires_after).\
+        returning(payment_method.c.payment_method_id)
+    rs = await session.execute(q)
+    return UUID(rs.scalar())
+
+
+@operation
+async def get_payment_profile(session: AsyncSession, user_profile_id: UUID,
+                              processor_id: str
+                              ) -> PaymentProfileRecord:
+    q = select(payment_profile.c.user_profile_id,
+               payment_profile.c.payment_profile_id,
+               payment_profile.c.processor_id,
+               payment_profile.c.processor_customer_profile_id).\
+        where(payment_profile.c.user_profile_id == str(user_profile_id)).\
+        where(payment_profile.c.processor_id == processor_id)
+    rs = await session.execute(q)
+
+    try:
+        return PaymentProfileRecord.unmarshal_row(rs.one())
+    except sqlalchemy.exc.NoResultFound:
+        return None
+
+
+@operation
+async def get_payment_methods(session: AsyncSession, user_profile_id: UUID,
+                              payment_profile_id: Optional[UUID]=None,
+                              processor_id: Optional[str]=None,
+                              status: Optional[PaymentMethodStatus]=PaymentMethodStatus.Current,
+                              ) -> Recordset:
+    if not any([payment_profile_id, processor_id]):
+        raise ValueError("one of payment_profile_id, processor_id are required")
+
+    q = select(payment_profile.c.user_profile_id,
+               payment_profile.c.payment_profile_id,
+               payment_profile.c.processor_id,
+               payment_profile.c.processor_customer_profile_id,
+               payment_method.c.payment_method_id,
+               payment_method.c.processor_payment_method_id,
+               payment_method.c.payment_method_type,
+               payment_method.c.payment_method_family,
+               payment_method.c.display_name,
+               payment_method.c.safe_account_number_fragment,
+               payment_method.c.status,
+               payment_method.c.expires_after).\
+        select_from(payment_profile).\
+        join(payment_method).\
+        where(payment_profile.c.user_profile_id == str(user_profile_id))
+
+    if payment_profile_id is not None:
+        q = q.where(payment_profile.c.payment_profile_id == str(payment_profile_id))
+    if processor_id is not None:
+        q = q.where(payment_profile.c.processor_id == processor_id)
+    if status is not None:
+        q = q.where(payment_method.c.status == status.value)
+
+    rs = await session.execute(q)
+    return PaymentMethodRecord.unmarshal_result(rs)

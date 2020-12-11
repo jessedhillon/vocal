@@ -46,11 +46,32 @@ class EmailContactMethod(ContactMethod):
     value: str
 
 
+@dataclass(frozen=True)
+class PaymentMethod(ViewModel):
+    user_profile_id: UUID
+    payment_profile_id: UUID
+    payment_method_id: UUID
+    processor_payment_method_id: str
+    payment_method_type: PaymentMethodType
+    payment_method_family: str
+    display_name: str
+    safe_account_number_fragment: str
+    status: PaymentMethodStatus
+    expire_after: datetime
+
+
+@define_view('payment_profile_id', 'processor_id', name='public')
+@dataclass(frozen=True)
+class PaymentProfile(ViewModel):
+    user_profile_id: UUID
+    payment_profile_id: UUID
+    processor_id: str
+    processor_customer_profile_id: str
+
+
 @define_view('user_profile_id', 'public', name='public')
 @dataclass(frozen=True)
 class UserProfile(ViewModel):
-    user_profile_id: UUID
-
     @dataclass(frozen=True)
     class _public(ViewModel):
         display_name: str
@@ -68,6 +89,7 @@ class UserProfile(ViewModel):
         password: Optional[str]
         role: UserRole
 
+    user_profile_id: UUID
     auth: _auth
     public: _public
     private: _private
