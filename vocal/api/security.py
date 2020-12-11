@@ -9,9 +9,9 @@ from aiohttp_session import SimpleCookieStorage, Session as BaseSession
 from aiohttp_session.redis_storage import RedisStorage
 from aiohttp.web_exceptions import HTTPForbidden
 
-from vocal.api.constants import UserRole
 from vocal.api.models.user_profile import UserProfile, ContactMethod
 from vocal.api.models.authn import AuthnChallenge, AuthnChallengeType
+from vocal.constants import UserRole
 
 
 MaxVerificationChallengeAttempts = 3

@@ -4,10 +4,10 @@ import vocal.api.operations as op
 import vocal.api.security as security
 import vocal.api.util as util
 from vocal.config import AppConfig
-from vocal.api.constants import PaymentDemandType
 from vocal.api.models.membership import SubscriptionPlan
 from vocal.api.models.requests import CreateSubscriptionPlanRequest
 from vocal.api.security import AuthnSession, Capability
+from vocal.constants import PaymentDemandType
 
 
 async def get_subscription_plans(request, ctx: AppConfig, session: AuthnSession):

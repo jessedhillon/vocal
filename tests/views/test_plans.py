@@ -2,8 +2,8 @@ import json
 from decimal import Decimal
 
 import vocal.api.operations as op
-from vocal.api.constants import PaymentDemandType, PaymentDemandPeriod, UserRole
 from vocal.api.models.membership import SubscriptionPlan
+from vocal.constants import PaymentDemandType, PaymentDemandPeriod, UserRole
 
 from .. import AppTestCase
 

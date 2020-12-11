@@ -23,6 +23,7 @@ setup(name='vocal',
           'colorlog==4.6.2',
           'jinja2==2.11.2',
           'PyYAML==5.3.1',
+          'hashids==1.3.1',
       ],
       tests_require=[
           'pytest==6.1.2',

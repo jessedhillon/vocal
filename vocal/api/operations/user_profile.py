@@ -1,3 +1,4 @@
+from datetime import datetime
 from uuid import UUID
 from typing import Union
 
@@ -6,8 +7,7 @@ from sqlalchemy import func as f
 from sqlalchemy.ext.asyncio.session import AsyncSession
 from sqlalchemy.sql.expression import alias, exists, false, join, literal, select, true
 
-from vocal.api.models.user_profile import UserRole, ContactMethodType
-from vocal.api.util import operation
+from vocal.constants import ContactMethodType, PaymentMethodType, PaymentMethodStatus, UserRole
 from vocal.api.storage.record import UserProfileRecord, EmailContactMethodRecord,\
         PhoneContactMethodRecord
 from vocal.api.storage.sql import user_profile, user_auth, contact_method, email_contact_method,\

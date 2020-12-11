@@ -4,7 +4,7 @@ from uuid import UUID, uuid4
 
 import vocal.api.util as util
 from vocal.api.storage.record import UserProfileRecord, ContactMethodRecord
-from vocal.api.constants import AuthnChallengeType, ContactMethodType
+from vocal.constants import AuthnChallengeType, ContactMethodType
 
 from .base import define_view, ViewModel
 

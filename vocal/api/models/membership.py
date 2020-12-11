@@ -3,7 +3,7 @@ from decimal import Decimal
 from typing import Optional
 from uuid import UUID
 
-from vocal.api.constants import ISO4217Currency, PaymentDemandType, PaymentDemandPeriod,\
+from vocal.constants import ISO4217Currency, PaymentDemandType, PaymentDemandPeriod,\
         SubscriptionPlanStatus
 from vocal.api.storage.record import Recordset, SubscriptionPlanPaymentDemandRecord
 
@@ -44,7 +44,7 @@ class SubscriptionPlan(ViewModel):
     def unmarshal_recordset(cls, rs: Recordset[SubscriptionPlanPaymentDemandRecord]
                             ) -> list['SubscriptionPlan']:
         plans = {}
-        for plan_id, recs in rs.group_by('subscription_plan_id'):
+        for plan_id, recs in rs.group_by('subscription_plan_id').items():
             for rec in recs:
                 plans.setdefault(plan_id, {
                     'subscription_plan_id': plan_id,

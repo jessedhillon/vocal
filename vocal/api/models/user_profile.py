@@ -3,8 +3,8 @@ from dataclasses import dataclass
 from datetime import datetime
 from uuid import UUID
 
-from vocal.api.constants import ContactMethodType, UserRole
 from vocal.api.storage.record import UserProfileRecord
+from vocal.constants import ContactMethodType, PaymentMethodStatus, PaymentMethodType, UserRole
 
 from .base import ViewModel, define_view
 

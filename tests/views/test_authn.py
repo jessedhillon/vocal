@@ -1,9 +1,9 @@
 import json
 
 import vocal.api.operations as op
-from vocal.api.constants import UserRole
 from vocal.api.models import user_profile
 from vocal.api.security import Capability
+from vocal.constants import UserRole
 
 from .. import AppTestCase
 
@@ -11,13 +11,10 @@ from .. import AppTestCase
 class AuthnTestCase(AppTestCase):
     async def test_start_session(self):
         async with op.session(self.appctx) as session:
-            profile_id = await op.user_profile.create_user_profile(
-                'Jesse',
-                'Jesse Dhillon',
-                '123foobar^#@',
-                UserRole.Subscriber,
-                'jesse@dhillon.com',
-                '+14155551234').execute(session)
+            profile_id = await op.user_profile.\
+                create_user_profile('Jesse', 'Jesse Dhillon', '123foobar^#@',
+                                    UserRole.Subscriber, 'jesse@dhillon.com', '+14155551234').\
+                execute(session)
 
         body = {
             'principalName': 'jesse@dhillon.com',
@@ -57,12 +54,8 @@ class AuthnTestCase(AppTestCase):
     async def test_get_authn_challenge(self):
         async with op.session(self.appctx) as session:
             profile_id = await op.user_profile.\
-                create_user_profile('Jesse',
-                                    'Jesse Dhillon',
-                                    '123foobar^#@',
-                                    UserRole.Subscriber,
-                                    'jesse@dhillon.com',
-                                    '+14155551234').\
+                create_user_profile('Jesse', 'Jesse Dhillon', '123foobar^#@',
+                                    UserRole.Subscriber, 'jesse@dhillon.com', '+14155551234').\
                 execute(session)
             profile = await op.user_profile.\
                 get_user_profile(user_profile_id=profile_id).\

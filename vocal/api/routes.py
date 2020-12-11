@@ -16,6 +16,7 @@ async def configure(appctx):
                  users.get_contact_method_verify_challenge, {}),
         RouteDef('POST', '/users/{user_profile_id}/contactMethods/{contact_method_id}/verify',
                  users.verify_contact_method, {}),
+        RouteDef('POST', '/users/{user_profile_id}/paymentMethods', users.add_payment_method, {}),
 
         # plan
         RouteDef('GET', '/plans', plans.get_subscription_plans, {}),

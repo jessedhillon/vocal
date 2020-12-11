@@ -1,8 +1,8 @@
 import json
 
 import vocal.api.operations as op
-from vocal.api.constants import UserRole
 from vocal.api.models import user_profile
+from vocal.constants import UserRole
 
 from .. import AppTestCase
 
@@ -30,8 +30,8 @@ class UsersViewTestCase(AppTestCase):
         assert resp.status == 200
 
         resp = await self.client.request(
-                'GET',
-                f'/users/{profile.user_profile_id}/contactMethods/{profile.email_contact_method_id}/verify')
+            'GET',
+            f'/users/{profile.user_profile_id}/contactMethods/{profile.email_contact_method_id}/verify')
         j = await resp.json()
         assert resp.status == 200
         assert j['data']['hint'] == 'j****@dhillon.com'
@@ -44,9 +44,9 @@ class UsersViewTestCase(AppTestCase):
             'passcode': vc['secret']
         }
         resp = await self.client.request(
-                'POST',
-                f'/users/{profile.user_profile_id}/contactMethods/{profile.email_contact_method_id}/verify',
-                json=vcresp)
+            'POST',
+            f'/users/{profile.user_profile_id}/contactMethods/{profile.email_contact_method_id}/verify',
+            json=vcresp)
         assert resp.status == 200
 
         session = self.get_session()

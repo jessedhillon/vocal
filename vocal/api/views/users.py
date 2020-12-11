@@ -5,11 +5,12 @@ from aiohttp.web import HTTPBadRequest, HTTPForbidden, HTTPNotFound, HTTPOk, Req
 import vocal.api.operations as op
 import vocal.api.security as security
 import vocal.api.util as util
-from vocal.config import AppConfig
-from vocal.api.constants import AuthnChallengeType, ContactMethodType
 from vocal.api.models.authn import AuthnChallenge, AuthnChallengeResponse
-from vocal.api.models.requests import AuthnChallengeResponseRequest
+from vocal.api.models.requests import AuthnChallengeResponseRequest, AddPaymentMethodRequest
+from vocal.api.models.user_profile import UserProfile
 from vocal.api.security import AuthnSession, Capability
+from vocal.config import AppConfig
+from vocal.constants import AuthnChallengeType, ContactMethodType, PaymentMethodStatus
 
 
 @security.requires(Capability.Authenticate)

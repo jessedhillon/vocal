@@ -77,8 +77,12 @@ def message(handler):
             return json_response(ResultMessage(status=status), status=400,
                                  reason=reason, dumps=json.encode)
         else:
-            status = MessageStatus(success=False, message="unknown response type")
-            return json_response(ResultMessage(status=status), status=500)
+            try:
+                status = MessageStatus(success=True, message=HTTPStatus(200).phrase)
+                return ScalarResultMessage(status=status, data=resp)
+            except Exception:
+                status = MessageStatus(success=False, message="unknown response type")
+                return json_response(ResultMessage(status=status), status=500, dumps=json.encode)
     return f
 
 

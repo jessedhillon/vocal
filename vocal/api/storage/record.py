@@ -10,22 +10,12 @@ from uuid import UUID
 from sqlalchemy.engine.result import Result
 from sqlalchemy.engine.row import Row
 
-from vocal.api.constants import ContactMethodType, ISO4217Currency, SubscriptionPlanStatus,\
-        PaymentDemandType, PaymentDemandPeriod, UserRole
-
-
-class BaseRecord(object):
-    @classmethod
-    def unmarshal_result(cls: 'BaseRecord', rs: Result) -> 'Recordset':
-        return [cls.unmarshal_row(row) for row in rs.all()]
-
-    @classmethod
-    def unmarshal_row(cls: 'BaseRecord', row: Row) -> 'BaseRecord':
-        raise NotImplementedError()
+from vocal.constants import ContactMethodType, ISO4217Currency, SubscriptionPlanStatus,\
+        PaymentDemandType, PaymentDemandPeriod, PaymentMethodStatus, PaymentMethodType, UserRole
 
 
 class Recordset(Sequence):
-    def __init__(self, records: list[BaseRecord]):
+    def __init__(self, records: list['BaseRecord']):
         self._records = records
 
     def __len__(self):
@@ -34,8 +24,21 @@ class Recordset(Sequence):
     def __getitem__(self, index):
         return self._records.__getitem__(index)
 
-    def group_by(self, field_name: str) -> dict[Any, list[BaseRecord]]:
-        return itertools.groupby(self._records, key=lambda r: getattr(r, field_name))
+    def group_by(self, field_name: str) -> dict[Any, list['BaseRecord']]:
+        r = {}
+        for rec in self._records:
+            v = getattr(rec, field_name)
+            r.setdefault(v, []).append(rec)
+        return r
+
+class BaseRecord(object):
+    @classmethod
+    def unmarshal_result(cls, rs: Result) -> Recordset:
+        return Recordset([cls.unmarshal_row(row) for row in rs.all()])
+
+    @classmethod
+    def unmarshal_row(cls, row: Row) -> 'BaseRecord':
+        raise NotImplementedError()
 
 
 @dataclass(frozen=True)

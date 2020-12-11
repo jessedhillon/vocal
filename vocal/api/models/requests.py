@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from typing import Optional, Union
 from uuid import UUID
 
-from vocal.api.constants import AuthnPrincipalType, PaymentDemandType, ISO4217Currency,\
+from vocal.constants import AuthnPrincipalType, PaymentDemandType, ISO4217Currency,\
     PaymentDemandPeriod
 
 

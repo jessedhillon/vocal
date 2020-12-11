@@ -152,14 +152,17 @@ class AppTestCase(DatabaseTestCase):
             'challenge_id': challenge['challenge_id'],
             'passcode': challenge['secret'],
         }
-        resp = await self.client.request('POST', '/authn/challenge', json=chresp)
+        await self.client.request('POST', '/authn/challenge', json=chresp)
 
         cookie = json.loads(self.get_cookie('TEST_SESSION').value)
         session = cookie['session']
-        challenge = session['pending_challenge']
+        if session['pending_challenge'] is not None:
+            challenge = session['pending_challenge']
 
-        chresp = {
-            'challenge_id': challenge['challenge_id'],
-            'passcode': '123foobar^#@',
-        }
-        resp = await self.client.request('POST', '/authn/challenge', json=chresp)
+            chresp = {
+                'challenge_id': challenge['challenge_id'],
+                'passcode': '123foobar^#@',
+            }
+            await self.client.request('POST', '/authn/challenge', json=chresp)
+
+        return profile_id

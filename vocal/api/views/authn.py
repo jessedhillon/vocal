@@ -4,10 +4,10 @@ import vocal.api.operations as op
 import vocal.api.security as security
 import vocal.api.util as util
 from vocal.config import AppConfig
-from vocal.api.constants import AuthnChallengeType, AuthnPrincipalType, UserRole
 from vocal.api.models.authn import AuthnChallenge, AuthnChallengeResponse
 from vocal.api.models.requests import AuthnChallengeResponseRequest, InitiateAuthnSessionRequest
 from vocal.api.security import AuthnSession, Capability
+from vocal.constants import AuthnChallengeType, AuthnPrincipalType, UserRole
 
 
 @security.new_session

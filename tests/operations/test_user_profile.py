@@ -3,7 +3,7 @@ import json
 import pytest
 
 import vocal.api.operations as op
-from vocal.api.constants import UserRole
+from vocal.constants import UserRole
 
 from .. import DatabaseTestCase
 

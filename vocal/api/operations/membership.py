@@ -7,7 +7,7 @@ from sqlalchemy import func as f
 from sqlalchemy.ext.asyncio.session import AsyncSession
 from sqlalchemy.sql.expression import alias, exists, false, join, literal, select, true
 
-from vocal.api.constants import ISO4217Currency, SubscriptionPlanStatus, PaymentDemandType,\
+from vocal.constants import ISO4217Currency, SubscriptionPlanStatus, PaymentDemandType,\
         PaymentDemandPeriod
 from vocal.api.util import operation
 from vocal.api.storage.record import Recordset, SubscriptionPlanPaymentDemandRecord
