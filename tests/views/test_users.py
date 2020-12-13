@@ -90,7 +90,7 @@ class UsersViewTestCase(AppTestCase):
                     user_profile_id=profile_id,
                     payment_profile_id=pp.payment_profile_id).\
                 execute(ss)
-        assert pp.processor_customer_profile_id in mock._store
+        assert pp.processor_customer_profile_id in mock._customers
         for pp_id, pmeths in pms.group_by('payment_profile_id').items():
             assert pp_id == pp.payment_profile_id
             assert len(pmeths) == 1
@@ -140,7 +140,7 @@ class UsersViewTestCase(AppTestCase):
                     user_profile_id=profile_id,
                     payment_profile_id=pp.payment_profile_id).\
                 execute(ss)
-        assert pp.processor_customer_profile_id in mock._store
+        assert pp.processor_customer_profile_id in mock._customers
         for pp_id, pmeths in pms.group_by('payment_profile_id').items():
             assert pp_id == pp.payment_profile_id
             assert len(pmeths) == 2

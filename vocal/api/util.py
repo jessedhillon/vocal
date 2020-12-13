@@ -1,5 +1,6 @@
 import math
 import random
+import warnings
 from http import HTTPStatus
 from functools import wraps, partial
 
@@ -110,8 +111,10 @@ def operation(impl=None, **impl_kwargs):
     return f
 
 
+_notset = object()
 class operation_impl(object):
-    def __init__(self, impl, *args, single_result=False, record_cls=None, **kwargs):
+    def __init__(self, impl, *args, single_result=False, record_cls=None,
+                 default=_notset, **kwargs):
         self._impl = impl
         self._args = args
         self._kwargs = kwargs
@@ -120,6 +123,9 @@ class operation_impl(object):
         self._returning_cls = None
         self._single_result = single_result
 
+        self._return_default = default is not _notset
+        self._default = default
+
     async def execute(self, session):
         if self._executed:
             raise RuntimeError("attempted double execution of operation")
@@ -127,22 +133,27 @@ class operation_impl(object):
 
         rs = await self._impl(session, *self._args, **self._kwargs)
         if self._record_cls is not None:
-            recs = self._record_cls.unmarshal_result(rs, single=self._single_result)
+            try:
+                recs = self._record_cls.unmarshal_result(rs, single=self._single_result)
+                if not recs:
+                    warnings.warn("unmarshal_result() returned None")
+            except Exception as e:
+                # NOTE: a default return will bypass returning_cls construction
+                if self._return_default:
+                    return self._default
+                raise
         else:
             recs = rs
 
-        if self._returning_cls is None:
-            return recs
-
-        if isinstance(recs, BaseRecord):
-            return self._returning_cls.unmarshal_record(recs)
-        elif isinstance(recs, Recordset):
-            recset = self._returning_cls.unmarshal_recordset(recs)
-            if self._single_result:
-                return recset[0]
-            return recset
-        import pdb; pdb.set_trace()
-        return rs
+        if self._returning_cls is not None:
+            if isinstance(recs, BaseRecord):
+                return self._returning_cls.unmarshal_record(recs)
+            elif isinstance(recs, Recordset):
+                recset = self._returning_cls.unmarshal_recordset(recs)
+                if self._single_result:
+                    return recset[0]
+                return recset
+        return recs
 
     def unmarshal_with(self, rcls: 'ViewModel') -> 'operation_impl':
         self._returning_cls = rcls

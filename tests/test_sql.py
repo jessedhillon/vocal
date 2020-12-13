@@ -1,11 +1,13 @@
 import pytest
 from contextlib import asynccontextmanager
+from datetime import datetime, timedelta
 
 import sqlalchemy.ext.asyncio
 from sqlalchemy.exc import DBAPIError, IntegrityError
 
 from vocal.api.storage.sql import user_profile, contact_method, phone_contact_method,\
-        email_contact_method, payment_demand, subscription_plan, subscription
+        email_contact_method, payment_demand, payment_profile, payment_method, subscription_plan,\
+        subscription
 
 from . import DatabaseTestCase
 
@@ -59,6 +61,28 @@ class SqlTestCase(DatabaseTestCase):
                            period='monthly').
                     returning(payment_demand.c.payment_demand_id))
             self.payment_demand_id = r.scalar()
+
+            r = await ss.execute(
+                payment_profile.insert().
+                    values(user_profile_id=self.user_profile_id,
+                           processor_id='com.example',
+                           processor_customer_profile_id='foo-bar').
+                    returning(payment_profile.c.payment_profile_id))
+            self.payment_profile_id = r.scalar()
+
+            r = await ss.execute(
+                payment_method.insert().
+                    values(user_profile_id=self.user_profile_id,
+                           payment_profile_id=self.payment_profile_id,
+                           processor_payment_method_id='bar-baz',
+                           payment_method_type='credit_card',
+                           payment_method_family='visa',
+                           display_name='Visa 4242',
+                           safe_account_number_fragment='4242',
+                           status='current',
+                           expires_after=datetime.now() + timedelta(days=365)).
+                    returning(payment_method.c.payment_method_id))
+            self.payment_method_id = r.scalar()
 
     async def test_cannot_update_verified_phone(self):
         with pytest.raises(DBAPIError) as exc_info:
@@ -120,8 +144,10 @@ class SqlTestCase(DatabaseTestCase):
                     values(user_profile_id=self.user_profile_id,
                            subscription_plan_id=self.subscription_plan_id,
                            payment_demand_id=self.payment_demand_id,
+                           payment_profile_id=self.payment_profile_id,
+                           payment_method_id=self.payment_method_id,
                            status='current',
-                           processor_subscription_id='foobar')
+                           processor_charge_id='foobar')
                 await ss.execute(q)
 
                 q = payment_demand.\

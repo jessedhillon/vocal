@@ -80,7 +80,10 @@ class BaseRecord(object):
 
     @classmethod
     def unmarshal_single_result(cls, rs: Result) -> Union['BaseRecord', Recordset]:
-        return cls.unmarshal_row(cls.group_logical(rs)[0])
+        lg = cls.group_logical(rs)
+        if len(lg) == 0:
+            raise sqlalchemy.exc.NoResultFound()
+        return cls.unmarshal_row(lg[0])
 
     @classmethod
     def unmarshal_result(cls, rs: Result, single=False) -> Union['BaseRecord', Recordset]:
@@ -182,9 +185,9 @@ class ContactMethodRecord(BaseRecord):
     def unmarshal_row(cls, row: Row) -> 'ContactMethodRecord':
         cmtype = ContactMethodType(row[3])
         if cmtype is ContactMethodType.Email:
-            EmailContactMethodRecord.unmarshal_row(row)
+            return EmailContactMethodRecord.unmarshal_row(row)
         elif cmtype is ContactMethodType.Phone:
-            PhoneContactMethodRecord.unmarshal_row(row)
+            return PhoneContactMethodRecord.unmarshal_row(row)
         else:
             raise ValueError(cmtype)
 

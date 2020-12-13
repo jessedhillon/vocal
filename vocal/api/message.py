@@ -31,7 +31,7 @@ class PaginationStatus:
 class ResultMessage(Generic[T]):
     status: MessageStatus
 
-    def marshal(self) -> dict:
+    def marshal_dict(self) -> dict:
         return dataclasses.asdict(self)
 
 

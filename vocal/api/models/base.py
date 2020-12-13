@@ -8,13 +8,16 @@ from vocal.api.storage import BaseRecord
 
 
 class ViewModel(object):
-    def as_dict(self):
+    def marshal_dict(self):
         return dataclasses.asdict(self)
 
     def get_view(self, view_name: str):
-        viewdef = self.__views__[view_name]
-        return {k: v.get_view(view_name) if isinstance(v, ViewModel) else v
-                for k, v in self.as_dict().items() if k in viewdef}
+        if view_name == 'default':
+            viewdef = [f.name for f in dataclasses.fields(self)]
+        else:
+            viewdef = self.__views__[view_name]
+        return {k: v.get_view(view_name) if isinstance(v, (ViewModel, model_collection)) else v
+                for k, v in self.marshal_dict().items() if k in viewdef}
 
     @classmethod
     def unmarshal_recordset(cls, recs: list[BaseRecord]) -> 'model_collection[ViewModel]':
@@ -25,9 +28,8 @@ class ViewModel(object):
         raise NotImplementedError()
 
 
-T = TypeVar('T')
-class model_collection(Sequence, Generic[T]):
-    def __init__(self, objs: list[T]=None):
+class model_collection(Sequence):
+    def __init__(self, objs: list[ViewModel]=None):
         self._objs = objs or []
 
     def __len__(self):
@@ -35,6 +37,9 @@ class model_collection(Sequence, Generic[T]):
 
     def __getitem__(self, index):
         return self._objs.__getitem__(index)
+
+    def get_view(self, view_name):
+        return [o.get_view(view_name) for o in self._objs]
 
     def append(self, obj: ViewModel):
         self._objs.append(obj)

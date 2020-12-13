@@ -17,10 +17,10 @@ async def get_subscription_plans(request, ctx: AppConfig, session: AuthnSession)
     async with op.session(ctx) as ss:
         plans = await op.membership.\
             get_subscription_plans().\
-            returning(SubscriptionPlan).\
+            unmarshal_with(SubscriptionPlan).\
             execute(ss)
 
-    return plans
+    return plans.get_view('default')
 
 
 @security.requires(Capability.PlanCreate)

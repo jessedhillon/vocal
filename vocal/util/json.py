@@ -11,10 +11,8 @@ from vocal.api.message import ResultMessage
 
 class JsonEncoder(json.JSONEncoder):
     def default(self, obj):
-        if hasattr(obj, 'as_dict'):
-            return obj.as_dict()
-        if isinstance(obj, ResultMessage):
-            return obj.marshal()
+        if hasattr(obj, 'marshal_dict'):
+            return obj.marshal_dict()
 
         if isinstance(obj, set):
             return list(obj)

@@ -28,4 +28,4 @@ def add_months(d: datetime, months: int) -> datetime:
         return datetime(next_year, next_month, d.day)
     else:
         # prediction overshoots
-        return datetime(next_year, next_month, d.day)
+        return datetime(next_year, next_month, min(d.day, next_eom))

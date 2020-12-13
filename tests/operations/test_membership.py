@@ -69,7 +69,7 @@ class MembershipOperationsTestCase(DatabaseTestCase):
 
             plans = await op.membership.\
                 get_subscription_plans().\
-                returning(SubscriptionPlan).\
+                unmarshal_with(SubscriptionPlan).\
                 execute(ss)
 
             p = plans[0]

@@ -95,7 +95,7 @@ class MockPaymentProcessor(BasePaymentProcessor):
             'start_date': start_date,
             'period': period.value,
             'amount': amount,
-            'iso_currency': iso_currency,
+            'iso_currency': iso_currency.value,
         })
         # TODO: throw exception to simulate failure
         return charge_id
@@ -114,9 +114,9 @@ class MockPaymentProcessor(BasePaymentProcessor):
             'timestamp': datetime.utcnow(),
             'customer_profile_id': customer_profile_id,
             'payment_method_id': payment_method_id,
-            'start_date': start_date,
+            'start_date': start_date.date(),
             'amount': amount,
-            'iso_currency': iso_currency,
+            'iso_currency': iso_currency.value,
         })
         # TODO: throw exception to simulate failure
         return charge_id

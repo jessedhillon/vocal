@@ -16,7 +16,7 @@ from vocal.api.storage.sql import user_profile, user_auth, contact_method, email
 from vocal.api.util import operation
 
 
-@operation(UserProfileRecord, single_result=True)
+@operation(UserProfileRecord, single_result=True, default=None)
 async def get_user_profile(session: AsyncSession, user_profile_id: UUID=None,
                            email_address: str=None, phone_number: str=None
                            ) -> Result:
@@ -151,7 +151,7 @@ async def add_contact_method(session: AsyncSession, user_profile_id: UUID,
     raise ValueError("one of email_address or phone_number is required")
 
 
-@operation(record_cls=ContactMethodRecord)
+@operation(record_cls=ContactMethodRecord, single_result=True)
 async def get_contact_method(session: AsyncSession, contact_method_id: UUID,
                              user_profile_id: UUID=None
                              ) -> Result:
@@ -178,7 +178,8 @@ async def get_contact_method(session: AsyncSession, contact_method_id: UUID,
     if user_profile_id is None:
         q = q.where(contact_method.c.user_profile_id == user_profile_id)
 
-    return await session.execute(q)
+    rs = await session.execute(q)
+    return rs
 
 
 @operation
@@ -238,7 +239,7 @@ async def add_payment_method(session: AsyncSession, user_profile_id: UUID,
     return UUID(rs.scalar())
 
 
-@operation(single_result=True, record_cls=PaymentProfileRecord)
+@operation(single_result=True, record_cls=PaymentProfileRecord, default=None)
 async def get_payment_profile(session: AsyncSession, user_profile_id: UUID,
                               processor_id: str
                               ) -> PaymentProfileRecord:

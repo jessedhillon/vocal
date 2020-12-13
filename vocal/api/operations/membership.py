@@ -6,6 +6,7 @@ from uuid import UUID
 
 import sqlalchemy.exc
 from sqlalchemy import func as f
+from sqlalchemy.engine.result import Result
 from sqlalchemy.ext.asyncio.session import AsyncSession
 from sqlalchemy.sql.expression import alias, exists, false, join, literal, select, true
 
@@ -130,7 +131,7 @@ async def get_subscription_plans(session: AsyncSession) -> Recordset:
 @operation(SubscriptionPlanPaymentDemandRecord, single_result=True)
 async def get_subscription_plan(session: AsyncSession, subscription_plan_id: UUID=None,
                                 payment_demand_id: UUID=None
-                                ) -> Optional[SubscriptionPlanPaymentDemandRecord]:
+                                ) -> Result:
     if not any([subscription_plan_id , payment_demand_id]):
         raise ValueError("one of subscription_plan_id, payment_demand_id are required")
 
@@ -169,7 +170,7 @@ async def create_subscription(session: AsyncSession, user_profile_id: UUID,
                               subscription_plan_id: UUID, payment_demand_id: UUID,
                               payment_profile_id: UUID, payment_method_id: UUID,
                               processor_charge_id: str
-                              ) -> UUID:
+                              ) -> Result:
     plans = await get_subscription_plan(
                       subscription_plan_id=subscription_plan_id,
                       payment_demand_id=payment_demand_id).\
@@ -209,3 +210,28 @@ async def create_subscription(session: AsyncSession, user_profile_id: UUID,
             subscription.c.status,
             subscription.c.started_at,
             subscription.c.current_status_until))
+
+
+@operation(SubscriptionRecord)
+async def get_subscriptions(session: AsyncSession, user_profile_id: UUID,
+                           subscription_plan_id: Optional[UUID]=None,
+                           payment_demand_id: Optional[UUID]=None,
+                           ) -> Result:
+    q = select(
+            subscription.c.user_profile_id,
+            subscription.c.subscription_plan_id,
+            subscription.c.payment_demand_id,
+            subscription.c.payment_profile_id,
+            subscription.c.payment_method_id,
+            subscription.c.processor_charge_id,
+            subscription.c.status,
+            subscription.c.started_at,
+            subscription.c.current_status_until).\
+        select_from(subscription).\
+        where(subscription.c.user_profile_id == str(user_profile_id))
+    if subscription_plan_id is not None:
+        q = q.where(subscription.c.subscription_plan_id == str(subscription_plan_id))
+    if payment_demand_id is not None:
+        q = q.where(subscription.c.payment_demand_id == str(payment_demand_id))
+
+    return await session.execute(q)
