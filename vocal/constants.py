@@ -27,6 +27,14 @@ class ContactMethodType(Enum):
     Address = 'address'
 
 
+class SubscriptionStatus(Enum):
+    Trial = 'trial'
+    Current = 'current'
+    Paused = 'paused'
+    Expired = 'expired'
+    Cancelled = 'cancelled'
+
+
 class SubscriptionPlanStatus(Enum):
     Active = 'active'
     Inactive = 'inactive'

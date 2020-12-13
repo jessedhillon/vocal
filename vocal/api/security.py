@@ -18,15 +18,18 @@ MaxVerificationChallengeAttempts = 3
 
 
 class Capability(Enum):
+    All = 'all'
     Authenticate = 'authn'
     ProfileList = 'profile.list'
     PlanCreate = 'plan.create'
     PaymentMethodCreate = 'payment_method.create'
+    SubscriptionCreate = 'subscription.create'
 
 
 RoleCapability = {
     UserRole.Superuser: {Capability.Authenticate, Capability.ProfileList,
-                         Capability.PlanCreate, Capability.PaymentMethodCreate},
+                         Capability.PlanCreate, Capability.PaymentMethodCreate,
+                         Capability.SubscriptionCreate},
     UserRole.Manager: {Capability.ProfileList},
     UserRole.Creator: {Capability.ProfileList},
     UserRole.Subscriber: {Capability.ProfileList, Capability.PaymentMethodCreate},

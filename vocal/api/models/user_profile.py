@@ -1,12 +1,13 @@
-from typing import Optional
-from dataclasses import dataclass
+from typing import Optional, List
+from dataclasses import dataclass, field
 from datetime import datetime
 from uuid import UUID
 
-from vocal.api.storage.record import UserProfileRecord
+from vocal.api.storage.record import UserProfileRecord, PaymentProfileRecord,\
+    PaymentMethodRecord, Recordset
 from vocal.constants import ContactMethodType, PaymentMethodStatus, PaymentMethodType, UserRole
 
-from .base import ViewModel, define_view
+from .base import ViewModel, define_view, model_collection
 
 
 @dataclass(frozen=True)
@@ -46,10 +47,10 @@ class EmailContactMethod(ContactMethod):
     value: str
 
 
+@define_view('payment_method_id', 'payment_method_type', 'payment_method_family', 'display_name',
+             'safe_account_number_fragment', 'status', 'expires_after', name='public')
 @dataclass(frozen=True)
 class PaymentMethod(ViewModel):
-    user_profile_id: UUID
-    payment_profile_id: UUID
     payment_method_id: UUID
     processor_payment_method_id: str
     payment_method_type: PaymentMethodType
@@ -57,16 +58,48 @@ class PaymentMethod(ViewModel):
     display_name: str
     safe_account_number_fragment: str
     status: PaymentMethodStatus
-    expire_after: datetime
+    expires_after: datetime
+
+    @classmethod
+    def unmarshal_record(cls, rec: PaymentMethodRecord) -> 'PaymentMethod':
+        return cls(payment_method_id=rec.payment_method_id,
+                   processor_payment_method_id=rec.processor_payment_method_id,
+                   payment_method_type=rec.payment_method_type,
+                   payment_method_family=rec.payment_method_family,
+                   display_name=rec.display_name,
+                   safe_account_number_fragment=rec.safe_account_number_fragment,
+                   status=rec.status,
+                   expires_after=rec.expires_after)
 
 
-@define_view('payment_profile_id', 'processor_id', name='public')
+@define_view('payment_profile_id', 'processor_id', 'payment_methods', name='public')
 @dataclass(frozen=True)
 class PaymentProfile(ViewModel):
     user_profile_id: UUID
     payment_profile_id: UUID
     processor_id: str
     processor_customer_profile_id: str
+    payment_methods: list[PaymentMethod] = field(default_factory=model_collection)
+
+    @classmethod
+    def unmarshal_recordset(cls, rs: Recordset[PaymentMethodRecord]
+                            ) -> Recordset['PaymentProfile']:
+        pps = {}
+        for k, profs in rs.group_by('payment_profile_id').items():
+            for rec in profs:
+                if k in pps:
+                    prof = pps[k]
+                    prof.payment_methods.append(PaymentMethod.unmarshal_record(rec))
+                else:
+                    pms = model_collection([PaymentMethod.unmarshal_record(rec)])
+                    prof = PaymentProfile(
+                        user_profile_id=rec.user_profile_id,
+                        payment_profile_id=rec.payment_profile_id,
+                        processor_id=rec.processor_id,
+                        processor_customer_profile_id=rec.processor_customer_profile_id,
+                        payment_methods=pms)
+                    pps[k] = prof
+        return list(pps.values())
 
 
 @define_view('user_profile_id', 'public', name='public')

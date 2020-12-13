@@ -37,21 +37,6 @@ def upgrade():
     payment_method_status.create(op.get_bind())
 
     op.create_table(
-        'subscription',
-        Column('user_profile_id', UUID,
-               ForeignKey('user_profile.user_profile_id'), primary_key=True),
-        Column('subscription_plan_id', UUID,
-               ForeignKey('subscription_plan.subscription_plan_id'), primary_key=True),
-        Column('payment_demand_id', UUID, primary_key=True),
-        Column('status', subscription_status, nullable=False),
-        Column('processor_subscription_id', String, nullable=False),
-        Column('started_at', DateTime, nullable=False, server_default=utcnow),
-        Column('current_status_at', DateTime, nullable=False, server_default=utcnow),
-        ForeignKeyConstraint(['subscription_plan_id', 'payment_demand_id'],
-                             ['payment_demand.subscription_plan_id',
-                              'payment_demand.payment_demand_id']))
-
-    op.create_table(
         'payment_profile',
         Column('user_profile_id', UUID,
                ForeignKey('user_profile.user_profile_id'), primary_key=True),
@@ -97,6 +82,32 @@ def upgrade():
                              ['payment_method.user_profile_id',
                               'payment_method.payment_profile_id',
                               'payment_method.payment_method_id']))
+
+    op.create_table(
+        'subscription',
+        Column('user_profile_id', UUID,
+               ForeignKey('user_profile.user_profile_id'), primary_key=True),
+        Column('subscription_plan_id', UUID,
+               ForeignKey('subscription_plan.subscription_plan_id'), primary_key=True),
+        Column('payment_demand_id', UUID, primary_key=True),
+        Column('payment_profile_id', UUID, nullable=False),
+        Column('payment_method_id', UUID, nullable=False),
+        Column('status', subscription_status, nullable=False),
+        Column('processor_charge_id', String, nullable=False),
+        Column('started_at', DateTime, nullable=False, server_default=utcnow),
+        Column('current_status_at', DateTime, nullable=False, server_default=utcnow),
+        Column('current_status_until', DateTime, server_default=utcnow),
+        ForeignKeyConstraint(['subscription_plan_id', 'payment_demand_id'],
+                             ['payment_demand.subscription_plan_id',
+                              'payment_demand.payment_demand_id']),
+        ForeignKeyConstraint(['user_profile_id', 'payment_profile_id'],
+                             ['payment_profile.user_profile_id',
+                              'payment_profile.payment_profile_id']),
+        ForeignKeyConstraint(['user_profile_id', 'payment_profile_id', 'payment_method_id'],
+                             ['payment_method.user_profile_id', 'payment_method.payment_profile_id',
+                              'payment_method.payment_method_id']))
+    op.create_unique_constraint('uq_user_subscription_plan', 'subscription',
+                                ['user_profile_id', 'subscription_plan_id'])
 
     op.create_table(
         'subscription_payment',

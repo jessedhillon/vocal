@@ -21,4 +21,6 @@ async def configure(appctx):
         # plan
         RouteDef('GET', '/plans', plans.get_subscription_plans, {}),
         RouteDef('POST', '/plans', plans.create_subscription_plan, {}),
+        RouteDef('POST', '/plans/{subscription_plan_id}/subscribe',
+                 plans.create_subscription, {}),
     ])

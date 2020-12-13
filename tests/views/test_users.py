@@ -131,7 +131,6 @@ class UsersViewTestCase(AppTestCase):
         payments = self.appctx.payments.get()
         mock = payments['com.example']
 
-        import pdb; pdb.set_trace()
         async with op.session(self.appctx) as ss:
             pp = await op.user_profile.get_payment_profile(
                     user_profile_id=profile_id,

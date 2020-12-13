@@ -43,6 +43,19 @@ class AddPaymentMethodRequest:
 
 
 @dataclass(frozen=True)
+class CreateSubscriptionRequest:
+    payment_method_id: UUID
+    subscription_plan_id: UUID
+    payment_demand_id: UUID
+
+    @classmethod
+    def unmarshal_request(cls, body: dict) -> 'CreateSubscriptionRequest':
+        return CreateSubscriptionRequest(payment_method_id=UUID(body['paymentMethodId']),
+                                         subscription_plan_id=UUID(body['subscriptionPlanId']),
+                                         payment_demand_id=UUID(body['paymentDemandId']))
+
+
+@dataclass(frozen=True)
 class CreateSubscriptionPlanRequest:
     @dataclass(frozen=True)
     class _create_periodic_payment_demand:

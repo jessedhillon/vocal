@@ -15,7 +15,7 @@ payment_demand_type = Enum('periodic', 'immediate', 'pay-go', name='payment_dema
                            create_type=False)
 payment_demand_period = Enum('daily', 'weekly', 'monthly', 'quarterly', 'annually',
                              name='payment_demand_period', create_type=False)
-subscription_status = Enum('current', 'paused', 'expired', 'cancelled',
+subscription_status = Enum('trial', 'current', 'paused', 'expired', 'cancelled',
                            name='subscription_status', create_type=False)
 payment_method_type = Enum('credit_card', 'cryptocurrency', 'eft', 'manual',
                            name='payment_method_type', create_type=False)
@@ -112,13 +112,22 @@ subscription = Table(
     Column('subscription_plan_id', UUID,
            ForeignKey('subscription_plan.subscription_plan_id'), primary_key=True),
     Column('payment_demand_id', UUID, primary_key=True),
+    Column('payment_profile_id', UUID, nullable=False),
+    Column('payment_method_id', UUID, nullable=False),
     Column('status', subscription_status, nullable=False),
-    Column('processor_subscription_id', String, nullable=False),
+    Column('processor_charge_id', String, nullable=False),
     Column('started_at', DateTime, nullable=False, server_default=utcnow),
     Column('current_status_at', DateTime, nullable=False, server_default=utcnow),
+    Column('current_status_until', DateTime, server_default=utcnow),
     ForeignKeyConstraint(['subscription_plan_id', 'payment_demand_id'],
                          ['payment_demand.subscription_plan_id',
-                          'payment_demand.payment_demand_id']))
+                          'payment_demand.payment_demand_id']),
+    ForeignKeyConstraint(['user_profile_id', 'payment_profile_id'],
+                         ['payment_profile.user_profile_id',
+                          'payment_profile.payment_profile_id']),
+    ForeignKeyConstraint(['user_profile_id', 'payment_profile_id', 'payment_method_id'],
+                         ['payment_method.user_profile_id', 'payment_method.payment_profile_id',
+                          'payment_method.payment_method_id']))
 
 payment_profile = Table(
     'payment_profile',

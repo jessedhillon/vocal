@@ -9,6 +9,7 @@ from vocal.constants import ISO3166Country, PaymentMethodType
 from vocal.locale.en_us import USState, USAddress
 
 
+ChargeID = NewType('ChargeID', str)
 CustomerProfileID = NewType('CustomerProfileID', str)
 RecurringChargeID = NewType('RecurringChargeID', str)
 PaymentMethodID = NewType('PaymentMethodID', str)
@@ -75,7 +76,7 @@ class CreditCardPaymentCredential(PaymentCredential):
 
     @property
     def _family_name(self) -> str:
-        return self._family_names.get(self.method_family, None)
+        return self._family_names.get(self.method_family, "Credit Card")
 
     @property
     def display_name(self) -> str:

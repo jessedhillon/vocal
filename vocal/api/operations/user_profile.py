@@ -254,11 +254,13 @@ async def get_payment_profile(session: AsyncSession, user_profile_id: UUID,
 @operation(record_cls=PaymentMethodRecord)
 async def get_payment_methods(session: AsyncSession, user_profile_id: UUID,
                               payment_profile_id: Optional[UUID]=None,
+                              payment_method_id: Optional[UUID]=None,
                               processor_id: Optional[str]=None,
                               status: Optional[PaymentMethodStatus]=PaymentMethodStatus.Current,
                               ) -> Recordset:
-    if not any([payment_profile_id, processor_id]):
-        raise ValueError("one of payment_profile_id, processor_id are required")
+    if not any([payment_profile_id, payment_method_id, processor_id]):
+        raise ValueError("one of payment_profile_id, payment_method_id, processor_id "
+                         "are required")
 
     q = select(payment_profile.c.user_profile_id,
                payment_profile.c.payment_profile_id,
@@ -276,6 +278,8 @@ async def get_payment_methods(session: AsyncSession, user_profile_id: UUID,
         join(payment_method).\
         where(payment_profile.c.user_profile_id == str(user_profile_id))
 
+    if payment_method_id is not None:
+        q = q.where(payment_method.c.payment_method_id == str(payment_method_id))
     if payment_profile_id is not None:
         q = q.where(payment_profile.c.payment_profile_id == str(payment_profile_id))
     if processor_id is not None:

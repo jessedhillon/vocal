@@ -12,7 +12,8 @@ from vocal.constants import ISO3166Country, ISO4217Currency, PaymentDemandPeriod
     PaymentMethodType
 
 from .models import PaymentCredential
-from .base import BasePaymentProcessor, CustomerProfileID, PaymentMethodID, RecurringChargeID
+from .base import BasePaymentProcessor, ChargeID, CustomerProfileID, PaymentMethodID,\
+    RecurringChargeID
 
 
 @dataclass(frozen=True)
@@ -26,7 +27,8 @@ class MockPaymentProcessor(BasePaymentProcessor):
 
     def __init__(self, client_id, secret):
         self.config = MockPaymentProcessorConfig(client_id=client_id, secret=secret)
-        self._store = {}
+        self._customers = {}
+        self._charges = []
 
     def _hash(self, n: int) -> str:
         h = Hashids(self.processor_id)
@@ -42,10 +44,10 @@ class MockPaymentProcessor(BasePaymentProcessor):
 
     async def create_customer_profile(self, vocal_user_profile_id: UUID,
                                       name: str, email: str, phone: Optional[str],
-                                      address: Optional[USAddress]
+                                      address: Optional[USAddress]=None
                                       ) -> CustomerProfileID:
         profile_id = self._hash(uuid4().int)
-        self._store[profile_id] = {
+        self._customers[profile_id] = {
             'id': profile_id,
             'meta': {
                 'description': str(vocal_user_profile_id),
@@ -61,10 +63,10 @@ class MockPaymentProcessor(BasePaymentProcessor):
     async def add_customer_payment_method(self, customer_profile_id: CustomerProfileID,
                                           credential: PaymentCredential
                                           ) -> PaymentMethodID:
-        assert customer_profile_id in self._store
+        assert customer_profile_id in self._customers
         assert credential.method_type is PaymentMethodType.CreditCard
         payment_method_id = self._hash(uuid4().int)
-        self._store[customer_profile_id]['payment_methods'][payment_method_id] = {
+        self._customers[customer_profile_id]['payment_methods'][payment_method_id] = {
             'id': payment_method_id,
             'card_number': credential.card_number,
             'cvv': credential.cvv,
@@ -72,19 +74,52 @@ class MockPaymentProcessor(BasePaymentProcessor):
         }
         return payment_method_id
 
-    async def create_recurring_charge(self, vocal_user_profile_id: UUID,
+    async def create_recurring_charge(self,
+                                      vocal_user_profile_id: UUID,
                                       customer_profile_id: CustomerProfileID,
                                       payment_method_id: PaymentMethodID,
                                       start_date: datetime,
                                       period: PaymentDemandPeriod,
-                                      total_periods: int,
                                       amount: Decimal,
+                                      total_periods: Optional[int]=None,
                                       trial_periods: Optional[int]=None,
                                       trial_amount: Optional[Decimal]=None,
                                       iso_currency: Optional[ISO4217Currency]=None,
                                       non_iso_currency: Optional[str]=None
                                       ) -> RecurringChargeID:
-        return self._hash(uuid4().int)
+        charge_id = self._hash(uuid4().int)
+        self._charges.append({
+            'timestamp': datetime.utcnow(),
+            'customer_profile_id': customer_profile_id,
+            'payment_method_id': payment_method_id,
+            'start_date': start_date,
+            'period': period.value,
+            'amount': amount,
+            'iso_currency': iso_currency,
+        })
+        # TODO: throw exception to simulate failure
+        return charge_id
+
+    async def create_immediate_charge(self,
+                                      vocal_user_profile_id: UUID,
+                                      customer_profile_id: CustomerProfileID,
+                                      payment_method_id: PaymentMethodID,
+                                      start_date: datetime,
+                                      amount: Decimal,
+                                      iso_currency: Optional[ISO4217Currency]=None,
+                                      non_iso_currency: Optional[str]=None
+                                      ) -> ChargeID:
+        charge_id = self._hash(uuid4().int)
+        self._charges.append({
+            'timestamp': datetime.utcnow(),
+            'customer_profile_id': customer_profile_id,
+            'payment_method_id': payment_method_id,
+            'start_date': start_date,
+            'amount': amount,
+            'iso_currency': iso_currency,
+        })
+        # TODO: throw exception to simulate failure
+        return charge_id
 
 
 def configure(client_id: str, secret: str) -> MockPaymentProcessor:

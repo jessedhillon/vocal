@@ -3,7 +3,9 @@ from decimal import Decimal
 
 import vocal.api.operations as op
 from vocal.api.models.membership import SubscriptionPlan
+from vocal.api.models.user_profile import PaymentProfile
 from vocal.constants import PaymentDemandType, PaymentDemandPeriod, UserRole
+from vocal.payments.models import PaymentCredential
 
 from .. import AppTestCase
 

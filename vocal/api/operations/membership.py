@@ -10,10 +10,12 @@ from sqlalchemy.ext.asyncio.session import AsyncSession
 from sqlalchemy.sql.expression import alias, exists, false, join, literal, select, true
 
 from vocal.constants import ISO4217Currency, SubscriptionPlanStatus, PaymentDemandType,\
-        PaymentDemandPeriod
+        PaymentDemandPeriod, SubscriptionStatus
+from vocal.util import dates
 from vocal.api.util import operation
-from vocal.api.storage.record import Recordset, SubscriptionPlanPaymentDemandRecord
-from vocal.api.storage.sql import subscription_plan, payment_demand
+from vocal.api.storage.record import Recordset, SubscriptionPlanPaymentDemandRecord,\
+        SubscriptionRecord
+from vocal.api.storage.sql import subscription_plan, payment_demand, subscription
 
 
 PaymentDemandDesc = Union[tuple[PaymentDemandType, PaymentDemandPeriod, Decimal,
@@ -122,5 +124,88 @@ async def get_subscription_plans(session: AsyncSession) -> Recordset:
                  (payment_demand.c.period == PaymentDemandPeriod.Monthly.value).desc(),
                  (payment_demand.c.period == PaymentDemandPeriod.Quarterly.value).desc(),
                  (payment_demand.c.period == PaymentDemandPeriod.Annually.value).desc())
-    rs = await session.execute(q)
-    return Recordset(SubscriptionPlanPaymentDemandRecord.unmarshal_result(rs))
+    return await session.execute(q)
+
+
+@operation(SubscriptionPlanPaymentDemandRecord, single_result=True)
+async def get_subscription_plan(session: AsyncSession, subscription_plan_id: UUID=None,
+                                payment_demand_id: UUID=None
+                                ) -> Optional[SubscriptionPlanPaymentDemandRecord]:
+    if not any([subscription_plan_id , payment_demand_id]):
+        raise ValueError("one of subscription_plan_id, payment_demand_id are required")
+
+    q = select(subscription_plan.c.subscription_plan_id,
+               subscription_plan.c.status,
+               subscription_plan.c.rank,
+               subscription_plan.c.name,
+               subscription_plan.c.description,
+               payment_demand.c.payment_demand_id,
+               payment_demand.c.demand_type,
+               payment_demand.c.period,
+               payment_demand.c.amount,
+               payment_demand.c.iso_currency,
+               payment_demand.c.non_iso_currency).\
+        select_from(subscription_plan).\
+        join(payment_demand).\
+        order_by(subscription_plan.c.subscription_plan_id,
+                 (subscription_plan.c.status == SubscriptionPlanStatus.Active.value).desc(),
+                 (payment_demand.c.demand_type == PaymentDemandType.Periodic.value).desc(),
+                 (payment_demand.c.period == PaymentDemandPeriod.Daily.value).desc(),
+                 (payment_demand.c.period == PaymentDemandPeriod.Weekly.value).desc(),
+                 (payment_demand.c.period == PaymentDemandPeriod.Monthly.value).desc(),
+                 (payment_demand.c.period == PaymentDemandPeriod.Quarterly.value).desc(),
+                 (payment_demand.c.period == PaymentDemandPeriod.Annually.value).desc())
+
+    if subscription_plan_id is not None:
+        q = q.where(subscription_plan.c.subscription_plan_id == str(subscription_plan_id))
+    if payment_demand_id is not None:
+        q = q.where(payment_demand.c.payment_demand_id == str(payment_demand_id))
+
+    return await session.execute(q)
+
+
+@operation(SubscriptionRecord, single_result=True)
+async def create_subscription(session: AsyncSession, user_profile_id: UUID,
+                              subscription_plan_id: UUID, payment_demand_id: UUID,
+                              payment_profile_id: UUID, payment_method_id: UUID,
+                              processor_charge_id: str
+                              ) -> UUID:
+    plans = await get_subscription_plan(
+                      subscription_plan_id=subscription_plan_id,
+                      payment_demand_id=payment_demand_id).\
+                  execute(session)
+
+    today = datetime.today()
+    pd = plans[0]
+    if pd.period is PaymentDemandPeriod.Daily:
+        good_until = today + timedelta(days=1)
+    elif pd.period is PaymentDemandPeriod.Weekly:
+        good_until = today + timedelta(days=7)
+    elif pd.period is PaymentDemandPeriod.Monthly:
+        good_until = dates.add_months(today, 1)
+    elif pd.period is PaymentDemandPeriod.Quarterly:
+        good_until = dates.add_months(today, 3)
+    elif pd.period is PaymentDemandPeriod.Annually:
+        good_until = dates.add_months(today, 12)
+
+    return await session.execute(
+        subscription.\
+        insert().\
+        values(user_profile_id=str(user_profile_id),
+               subscription_plan_id=str(subscription_plan_id),
+               payment_demand_id=str(payment_demand_id),
+               payment_profile_id=str(payment_profile_id),
+               payment_method_id=str(payment_method_id),
+               status=SubscriptionStatus.Current.value,
+               processor_charge_id=processor_charge_id,
+               current_status_until=good_until).\
+        returning(
+            subscription.c.user_profile_id,
+            subscription.c.subscription_plan_id,
+            subscription.c.payment_demand_id,
+            subscription.c.payment_profile_id,
+            subscription.c.payment_method_id,
+            subscription.c.processor_charge_id,
+            subscription.c.status,
+            subscription.c.started_at,
+            subscription.c.current_status_until))
