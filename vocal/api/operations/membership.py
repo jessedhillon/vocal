@@ -1,3 +1,5 @@
+import calendar
+from datetime import datetime, timedelta
 from decimal import Decimal
 from typing import Union, Optional
 from uuid import UUID
@@ -97,7 +99,7 @@ async def add_immediate_payment_demand(session: AsyncSession, subscription_plan_
     return r.scalar()
 
 
-@operation
+@operation(record_cls=SubscriptionPlanPaymentDemandRecord)
 async def get_subscription_plans(session: AsyncSession) -> Recordset:
     q = select(subscription_plan.c.subscription_plan_id,
                subscription_plan.c.status,

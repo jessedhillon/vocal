@@ -4,21 +4,22 @@ from typing import Optional, Union
 
 import sqlalchemy.exc
 from sqlalchemy import func as f
+from sqlalchemy.engine.result import Result
 from sqlalchemy.ext.asyncio.session import AsyncSession
 from sqlalchemy.sql.expression import alias, exists, false, join, literal, select, true
 
 from vocal.constants import ContactMethodType, PaymentMethodType, PaymentMethodStatus, UserRole
-from vocal.api.storage.record import UserProfileRecord, EmailContactMethodRecord,\
-        PaymentMethodRecord, PaymentProfileRecord, PhoneContactMethodRecord, Recordset
+from vocal.api.storage.record import UserProfileRecord, ContactMethodRecord,\
+        PaymentMethodRecord, PaymentProfileRecord, Recordset
 from vocal.api.storage.sql import user_profile, user_auth, contact_method, email_contact_method,\
         phone_contact_method, payment_profile, payment_method
 from vocal.api.util import operation
 
 
-@operation
+@operation(UserProfileRecord, single_result=True)
 async def get_user_profile(session: AsyncSession, user_profile_id: UUID=None,
                            email_address: str=None, phone_number: str=None
-                           ) -> UserProfileRecord:
+                           ) -> Result:
     if not any([user_profile_id, email_address, phone_number]):
         raise ValueError("one of user_profile_id, email_address, phone_number are required")
 
@@ -56,13 +57,7 @@ async def get_user_profile(session: AsyncSession, user_profile_id: UUID=None,
     if phone_number is not None:
         q = q.where(phone_contact_method.c.phone_number == phone_number)
 
-    rs = await session.execute(q)
-
-    try:
-        row = rs.one()
-        return UserProfileRecord.unmarshal_row(row)
-    except sqlalchemy.exc.NoResultFound:
-        return None
+    return await session.execute(q)
 
 
 @operation
@@ -156,10 +151,10 @@ async def add_contact_method(session: AsyncSession, user_profile_id: UUID,
     raise ValueError("one of email_address or phone_number is required")
 
 
-@operation
+@operation(record_cls=ContactMethodRecord)
 async def get_contact_method(session: AsyncSession, contact_method_id: UUID,
                              user_profile_id: UUID=None
-                            ) -> Union[PhoneContactMethodRecord, EmailContactMethodRecord]:
+                             ) -> Result:
     contact_method_id = str(contact_method_id)
     user_profile_id = str(user_profile_id)
 
@@ -183,17 +178,7 @@ async def get_contact_method(session: AsyncSession, contact_method_id: UUID,
     if user_profile_id is None:
         q = q.where(contact_method.c.user_profile_id == user_profile_id)
 
-    rs = await session.execute(q)
-    try:
-        cm = rs.one()
-        cmtype = ContactMethodType(cm[3])
-        if cmtype is ContactMethodType.Phone:
-            return PhoneContactMethodRecord.unmarshal_row(cm)
-        elif cmtype is ContactMethodType.Email:
-            return EmailContactMethodRecord.unmarshal_row(cm)
-        raise ValueError(cmtype)
-    except sqlalchemy.exc.NoResultFound:
-        return None
+    return await session.execute(q)
 
 
 @operation
@@ -253,7 +238,7 @@ async def add_payment_method(session: AsyncSession, user_profile_id: UUID,
     return UUID(rs.scalar())
 
 
-@operation
+@operation(single_result=True, record_cls=PaymentProfileRecord)
 async def get_payment_profile(session: AsyncSession, user_profile_id: UUID,
                               processor_id: str
                               ) -> PaymentProfileRecord:
@@ -263,15 +248,10 @@ async def get_payment_profile(session: AsyncSession, user_profile_id: UUID,
                payment_profile.c.processor_customer_profile_id).\
         where(payment_profile.c.user_profile_id == str(user_profile_id)).\
         where(payment_profile.c.processor_id == processor_id)
-    rs = await session.execute(q)
-
-    try:
-        return PaymentProfileRecord.unmarshal_row(rs.one())
-    except sqlalchemy.exc.NoResultFound:
-        return None
+    return await session.execute(q)
 
 
-@operation
+@operation(record_cls=PaymentMethodRecord)
 async def get_payment_methods(session: AsyncSession, user_profile_id: UUID,
                               payment_profile_id: Optional[UUID]=None,
                               processor_id: Optional[str]=None,
@@ -303,5 +283,4 @@ async def get_payment_methods(session: AsyncSession, user_profile_id: UUID,
     if status is not None:
         q = q.where(payment_method.c.status == status.value)
 
-    rs = await session.execute(q)
-    return PaymentMethodRecord.unmarshal_result(rs)
+    return await session.execute(q)

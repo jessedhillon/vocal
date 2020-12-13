@@ -1,17 +1,19 @@
 from collections.abc import Sequence
-from typing import Any, Optional
+from typing import Any, Callable, Optional, List, Union
 
 import itertools
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, asdict
 from datetime import datetime
 from decimal import Decimal
 from uuid import UUID
 
+import sqlalchemy.exc
 from sqlalchemy.engine.result import Result
 from sqlalchemy.engine.row import Row
 
 from vocal.constants import ContactMethodType, ISO4217Currency, SubscriptionPlanStatus,\
-        PaymentDemandType, PaymentDemandPeriod, PaymentMethodStatus, PaymentMethodType, UserRole
+        PaymentDemandType, PaymentDemandPeriod, PaymentMethodStatus, PaymentMethodType, UserRole,\
+        SubscriptionStatus
 
 
 class Recordset(Sequence):
@@ -31,14 +33,68 @@ class Recordset(Sequence):
             r.setdefault(v, []).append(rec)
         return r
 
+    def find(self, keyf: Callable[['BaseRecord'], bool]=None, **kwargs):
+        if keyf is not None:
+            for rec in self._records:
+                if keyf(rec):
+                    return rec
+            return None
+
+        elif kwargs:
+            for rec in self._records:
+                match = False
+                for key, val in kwargs.items():
+                    match = (getattr(rec, key) == val)
+                if match:
+                    return rec
+
+        raise RuntimeError("find() must be called with key function or kwargs")
+
+    def find_all(self, keyf: Callable[['BaseRecord'], bool]=None, **kwargs):
+        results = []
+        if keyf is not None:
+            for rec in self._records:
+                if keyf(rec):
+                    results.append(rec)
+            return results
+
+        elif kwargs:
+            for rec in self._records:
+                match = False
+                for key, val in kwargs.items():
+                    match = (getattr(rec, key) == val)
+                if match:
+                    results.append(rec)
+            return results
+
+        raise RuntimeError("find() must be called with key function or kwargs")
+
+    def __repr__(self):
+        return f"<{self.__class__.__name__} {self._records}>"
+
+
 class BaseRecord(object):
     @classmethod
-    def unmarshal_result(cls, rs: Result) -> Recordset:
-        return Recordset([cls.unmarshal_row(row) for row in rs.all()])
+    def group_logical(cls, rs: Result) -> List[Row]:
+        return rs.all()
+
+    @classmethod
+    def unmarshal_single_result(cls, rs: Result) -> Union['BaseRecord', Recordset]:
+        return cls.unmarshal_row(cls.group_logical(rs)[0])
+
+    @classmethod
+    def unmarshal_result(cls, rs: Result, single=False) -> Union['BaseRecord', Recordset]:
+        if single:
+            return cls.unmarshal_single_result(rs)
+        else:
+            return Recordset([cls.unmarshal_row(row) for row in rs.all()])
 
     @classmethod
     def unmarshal_row(cls, row: Row) -> 'BaseRecord':
         raise NotImplementedError()
+
+    def marshal_dict(self) -> dict:
+        return asdict(self)
 
 
 @dataclass(frozen=True)
@@ -122,6 +178,16 @@ class ContactMethodRecord(BaseRecord):
     contact_method_type: ContactMethodType.Email
     verified: bool
 
+    @classmethod
+    def unmarshal_row(cls, row: Row) -> 'ContactMethodRecord':
+        cmtype = ContactMethodType(row[3])
+        if cmtype is ContactMethodType.Email:
+            EmailContactMethodRecord.unmarshal_row(row)
+        elif cmtype is ContactMethodType.Phone:
+            PhoneContactMethodRecord.unmarshal_row(row)
+        else:
+            raise ValueError(cmtype)
+
 
 @dataclass(frozen=True)
 class EmailContactMethodRecord(ContactMethodRecord):
@@ -168,6 +234,25 @@ class SubscriptionPlanPaymentDemandRecord(BaseRecord):
     non_iso_currency: Optional[str]
 
     @classmethod
+    def group_logical(cls, rs: Result):
+        rows = rs.all()
+        if len(rows) == 0:
+            raise sqlalchemy.exc.NoResultFound()
+
+        groups = {}
+        for row in rows:
+            subscription_plan_id = row[0]
+            groups.setdefault(subscription_plan_id, []).append(row)
+        return list(groups.values())
+
+    @classmethod
+    def unmarshal_single_result(cls, rs: Result) -> Recordset:
+        groups = cls.group_logical(rs)
+        if len(groups) > 1:
+            raise sqlalchemy.exc.MultipleResultsFound()
+        return Recordset([cls.unmarshal_row(g) for g in groups[0]])
+
+    @classmethod
     def unmarshal_row(cls: 'SubscriptionPlanPaymentDemandRecord',
                       row: Row,
                       ) -> 'SubscriptionPlanPaymentDemandRecord':
@@ -183,3 +268,20 @@ class SubscriptionPlanPaymentDemandRecord(BaseRecord):
             amount=row[8],
             iso_currency=ISO4217Currency(row[9]) if row[9] else None,
             non_iso_currency=row[10])
+
+
+@dataclass(frozen=True)
+class SubscriptionRecord(BaseRecord):
+    user_profile_id: UUID
+    subscription_plan_id: UUID
+    payment_demand_id: UUID
+    payment_profile_id: UUID
+    payment_method_id: UUID
+    processor_charge_id: str
+    status: SubscriptionStatus
+    started_at: datetime
+    current_status_until: Optional[datetime]
+
+    @classmethod
+    def unmarshal_row(cls, row: Row) -> 'SubscriptionRecord':
+        return cls(*row)

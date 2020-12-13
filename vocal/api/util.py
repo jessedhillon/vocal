@@ -1,10 +1,11 @@
 import math
 import random
 from http import HTTPStatus
-from functools import wraps
+from functools import wraps, partial
 
 from aiohttp.web import Response, json_response, middleware
 from aiohttp.web_exceptions import HTTPException
+from sqlalchemy.engine.result import Result
 
 from vocal.api.message import ErrorMessage, MessageStatus, ResultMessage, ScalarResultMessage,\
         VectorResultMessage, PagedResultMessage
@@ -92,35 +93,59 @@ async def message_middleware(request, handler):
     return await wrapper(request)
 
 
-def operation(impl):
+def operation(impl=None, **impl_kwargs):
+    if impl is None:
+        return partial(operation, **impl_kwargs)
+
+    if isinstance(impl, type) and issubclass(impl, BaseRecord):
+        impl_kwargs.update({
+            'record_cls': impl,
+        })
+        return partial(operation, **impl_kwargs)
+
     @wraps(impl)
     def f(*args, **kwargs):
-        return operation_impl(impl, *args, **kwargs)
+        return operation_impl(impl, *args, **impl_kwargs, **kwargs)
 
     return f
 
 
 class operation_impl(object):
-    def __init__(self, impl, *args, **kwargs):
+    def __init__(self, impl, *args, single_result=False, record_cls=None, **kwargs):
         self._impl = impl
         self._args = args
         self._kwargs = kwargs
         self._executed = False
-        self._returning = None
+        self._record_cls = record_cls
+        self._returning_cls = None
+        self._single_result = single_result
 
     async def execute(self, session):
         if self._executed:
             raise RuntimeError("attempted double execution of operation")
         self._executed = True
-        rs = await self._impl(session, *self._args, **self._kwargs)
-        if self._returning is None:
-            return rs
-        if isinstance(rs, BaseRecord):
-            return self._returning.unmarshal_record(rs)
-        return self._returning.unmarshal_recordset(rs)
 
-    def returning(self, rcls: type) -> 'operation_impl':
-        self._returning = rcls
+        rs = await self._impl(session, *self._args, **self._kwargs)
+        if self._record_cls is not None:
+            recs = self._record_cls.unmarshal_result(rs, single=self._single_result)
+        else:
+            recs = rs
+
+        if self._returning_cls is None:
+            return recs
+
+        if isinstance(recs, BaseRecord):
+            return self._returning_cls.unmarshal_record(recs)
+        elif isinstance(recs, Recordset):
+            recset = self._returning_cls.unmarshal_recordset(recs)
+            if self._single_result:
+                return recset[0]
+            return recset
+        import pdb; pdb.set_trace()
+        return rs
+
+    def unmarshal_with(self, rcls: 'ViewModel') -> 'operation_impl':
+        self._returning_cls = rcls
         return self
 
     def __repr__(self):
