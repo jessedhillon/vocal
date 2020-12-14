@@ -123,9 +123,10 @@ class PlansViewTestCase(AppTestCase):
                     safe_account_number_fragment=cc.safe_account_number_fragment,
                     expires_after=cc.expire_after_date).\
                 execute(ss)
-            pms = await op.user_profile.get_payment_methods(
+            profiles = await op.user_profile.get_payment_methods(
                     user_profile_id=profile_id,
                     payment_profile_id=pp_id).\
+                unmarshal_with(PaymentProfile).\
                 execute(ss)
             plan_id = await op.membership.\
                 create_subscription_plan(
@@ -143,18 +144,19 @@ class PlansViewTestCase(AppTestCase):
                          Decimal('10.0'), 'USD'),
                         (PaymentDemandType.Immediate, Decimal('250.0'), 'USD'))).\
                 execute(ss)
-            planrecs = await op.membership.get_subscription_plans().execute(ss)
+            plans = await op.membership.\
+                get_subscription_plans().\
+                unmarshal_with(SubscriptionPlan).\
+                execute(ss)
 
-        profiles = PaymentProfile.unmarshal_recordset(pms)
-        plans = SubscriptionPlan.unmarshal_recordset(planrecs)
-        pd = plans[0].payment_demands[0]
+        pd = plans[0].payment_demands.find(period=PaymentDemandPeriod.Monthly)
+        pm = profiles[0].payment_methods.find(payment_method_id=pm_id)
         body = {
-            'paymentMethodId': str(profiles[0].payment_methods[0].payment_method_id),
+            'paymentMethodId': str(pm.payment_method_id),
             'subscriptionPlanId': str(plans[0].subscription_plan_id),
-            'paymentDemandId': str(plans[0].payment_demands[0].payment_demand_id),
+            'paymentDemandId': str(pd.payment_demand_id),
         }
         resp = await self.client.request('POST', f'/plans/{plan_id}/subscribe', json=body)
-        j = await resp.json()
 
         payments = self.appctx.payments.get()
         mock = payments['com.example']

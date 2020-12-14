@@ -200,16 +200,15 @@ async def create_subscription(session: AsyncSession, user_profile_id: UUID,
                status=SubscriptionStatus.Current,
                processor_charge_id=processor_charge_id,
                current_status_until=good_until).\
-        returning(
-            subscription.c.user_profile_id,
-            subscription.c.subscription_plan_id,
-            subscription.c.payment_demand_id,
-            subscription.c.payment_profile_id,
-            subscription.c.payment_method_id,
-            subscription.c.processor_charge_id,
-            subscription.c.status,
-            subscription.c.started_at,
-            subscription.c.current_status_until))
+        returning(subscription.c.user_profile_id,
+                  subscription.c.subscription_plan_id,
+                  subscription.c.payment_demand_id,
+                  subscription.c.payment_profile_id,
+                  subscription.c.payment_method_id,
+                  subscription.c.processor_charge_id,
+                  subscription.c.status,
+                  subscription.c.started_at,
+                  subscription.c.current_status_until))
 
 
 @operation(SubscriptionRecord)
@@ -217,16 +216,15 @@ async def get_subscriptions(session: AsyncSession, user_profile_id: UUID,
                            subscription_plan_id: Optional[UUID]=None,
                            payment_demand_id: Optional[UUID]=None,
                            ) -> Result:
-    q = select(
-            subscription.c.user_profile_id,
-            subscription.c.subscription_plan_id,
-            subscription.c.payment_demand_id,
-            subscription.c.payment_profile_id,
-            subscription.c.payment_method_id,
-            subscription.c.processor_charge_id,
-            subscription.c.status,
-            subscription.c.started_at,
-            subscription.c.current_status_until).\
+    q = select(subscription.c.user_profile_id,
+               subscription.c.subscription_plan_id,
+               subscription.c.payment_demand_id,
+               subscription.c.payment_profile_id,
+               subscription.c.payment_method_id,
+               subscription.c.processor_charge_id,
+               subscription.c.status,
+               subscription.c.started_at,
+               subscription.c.current_status_until).\
         select_from(subscription).\
         where(subscription.c.user_profile_id == user_profile_id)
     if subscription_plan_id is not None:
