@@ -7,6 +7,7 @@ from functools import wraps, partial
 from aiohttp.web import Response, json_response, middleware
 from aiohttp.web_exceptions import HTTPException
 from sqlalchemy.engine.result import Result
+from sqlalchemy.exc import NoResultFound
 
 from vocal.api.message import ErrorMessage, MessageStatus, ResultMessage, ScalarResultMessage,\
         VectorResultMessage, PagedResultMessage
@@ -137,7 +138,7 @@ class operation_impl(object):
                 recs = self._record_cls.unmarshal_result(rs, single=self._single_result)
                 if not recs:
                     warnings.warn("unmarshal_result() returned None")
-            except Exception as e:
+            except NoResultFound:
                 # NOTE: a default return will bypass returning_cls construction
                 if self._return_default:
                     return self._default

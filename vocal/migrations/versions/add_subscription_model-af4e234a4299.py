@@ -25,20 +25,21 @@ depends_on = None
 utcnow = f.timezone('UTC', f.now())
 v4_uuid = f.gen_random_uuid()
 
-enum = partial(Enum, values_callable=lambda en: [e.value for e in en], create_type=False)
+Enum = partial(Enum, values_callable=lambda en: [e.value for e in en], create_type=False)
 subscription_status = Enum('current', 'paused', 'expired', 'cancelled',
                            name='subscription_status', create_type=False)
 payment_method_type = Enum('credit_card', 'cryptocurrency', 'eft', 'manual',
                            name='payment_method_type', create_type=False)
 payment_method_status = Enum('current', 'expired', 'invalid',
                              name='payment_method_status', create_type=False)
-iso_4217_currency = enum(ISO4217Currency, name='iso_4217_currency')
+iso_4217_currency = Enum(ISO4217Currency, name='iso_4217_currency')
 
 
 def upgrade():
     subscription_status.create(op.get_bind())
     payment_method_type.create(op.get_bind())
     payment_method_status.create(op.get_bind())
+    iso_4217_currency.create(op.get_bind())
 
     op.create_table(
         'payment_profile',

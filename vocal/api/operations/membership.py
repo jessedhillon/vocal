@@ -158,9 +158,9 @@ async def get_subscription_plan(session: AsyncSession, subscription_plan_id: UUI
                  (payment_demand.c.period == PaymentDemandPeriod.Annually).desc())
 
     if subscription_plan_id is not None:
-        q = q.where(subscription_plan.c.subscription_plan_id == str(subscription_plan_id))
+        q = q.where(subscription_plan.c.subscription_plan_id == subscription_plan_id)
     if payment_demand_id is not None:
-        q = q.where(payment_demand.c.payment_demand_id == str(payment_demand_id))
+        q = q.where(payment_demand.c.payment_demand_id == payment_demand_id)
 
     return await session.execute(q)
 
@@ -192,11 +192,11 @@ async def create_subscription(session: AsyncSession, user_profile_id: UUID,
     return await session.execute(
         subscription.\
         insert().\
-        values(user_profile_id=str(user_profile_id),
-               subscription_plan_id=str(subscription_plan_id),
-               payment_demand_id=str(payment_demand_id),
-               payment_profile_id=str(payment_profile_id),
-               payment_method_id=str(payment_method_id),
+        values(user_profile_id=user_profile_id,
+               subscription_plan_id=subscription_plan_id,
+               payment_demand_id=payment_demand_id,
+               payment_profile_id=payment_profile_id,
+               payment_method_id=payment_method_id,
                status=SubscriptionStatus.Current,
                processor_charge_id=processor_charge_id,
                current_status_until=good_until).\
@@ -228,10 +228,10 @@ async def get_subscriptions(session: AsyncSession, user_profile_id: UUID,
             subscription.c.started_at,
             subscription.c.current_status_until).\
         select_from(subscription).\
-        where(subscription.c.user_profile_id == str(user_profile_id))
+        where(subscription.c.user_profile_id == user_profile_id)
     if subscription_plan_id is not None:
-        q = q.where(subscription.c.subscription_plan_id == str(subscription_plan_id))
+        q = q.where(subscription.c.subscription_plan_id == subscription_plan_id)
     if payment_demand_id is not None:
-        q = q.where(subscription.c.payment_demand_id == str(payment_demand_id))
+        q = q.where(subscription.c.payment_demand_id == payment_demand_id)
 
     return await session.execute(q)

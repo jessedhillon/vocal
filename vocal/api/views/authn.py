@@ -24,12 +24,12 @@ async def init_authn_session(request, ctx: AppConfig, session: AuthnSession):
         else:
             raise ValueError(sr.principal_type)
 
-        if u is None:
-            raise HTTPUnauthorized()
+    if u is None:
+        raise HTTPUnauthorized()
 
-        session.user_profile_id = u.user_profile_id
-        if u.role in {UserRole.Superuser, UserRole.Manager, UserRole.Creator}:
-            session.require_challenge(AuthnChallengeType.Password)
+    session.user_profile_id = u.user_profile_id
+    if u.role in {UserRole.Superuser, UserRole.Manager, UserRole.Creator}:
+        session.require_challenge(AuthnChallengeType.Password)
 
     session.add_capabilities(Capability.Authenticate)
     return HTTPOk()

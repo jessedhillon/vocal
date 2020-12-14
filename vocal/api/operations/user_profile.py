@@ -51,7 +51,7 @@ async def get_user_profile(session: AsyncSession, user_profile_id: UUID=None,
                   (phone.c.contact_method_id == phone_contact_method.c.contact_method_id))
 
     if user_profile_id is not None:
-        q = q.where(user_profile.c.user_profile_id == str(user_profile_id))
+        q = q.where(user_profile.c.user_profile_id == user_profile_id)
     if email_address is not None:
         q = q.where(email_contact_method.c.email_address == email_address)
     if phone_number is not None:
@@ -87,15 +87,13 @@ async def create_user_profile(session: AsyncSession, display_name: str, name: st
     if phone_number is not None:
         await add_contact_method(profile_id, phone_number=phone_number).execute(session)
 
-    return UUID(profile_id)
+    return profile_id
 
 
 @operation
 async def add_contact_method(session: AsyncSession, user_profile_id: UUID,
                              email_address: str=None, phone_number: str=None
                              ) -> UUID:
-    user_profile_id = str(user_profile_id)
-
     if email_address is not None:
         email_exists = exists().where(email_contact_method.c.email_address == email_address)
         q = select(literal(True)).\
@@ -155,11 +153,9 @@ async def add_contact_method(session: AsyncSession, user_profile_id: UUID,
 async def get_contact_method(session: AsyncSession, contact_method_id: UUID,
                              user_profile_id: UUID=None
                              ) -> Result:
-    contact_method_id = str(contact_method_id)
-    user_profile_id = str(user_profile_id)
-
     email = contact_method.alias()
     phone = contact_method.alias()
+
     q = select(contact_method.c.user_profile_id,
                contact_method.c.contact_method_id,
                contact_method.c.verified,
@@ -188,11 +184,11 @@ async def mark_contact_method_verified(session: AsyncSession, contact_method_id:
     u = contact_method.\
         update().\
         values(verified=True).\
-        where(contact_method.c.contact_method_id == str(contact_method_id)).\
+        where(contact_method.c.contact_method_id == contact_method_id).\
         where(contact_method.c.verified == false())
 
     if user_profile_id is not None:
-        u = u.where(contact_method.c.user_profile_id == str(user_profile_id))
+        u = u.where(contact_method.c.user_profile_id == user_profile_id)
 
     rs = await session.execute(u)
     c = rs.rowcount
@@ -208,12 +204,12 @@ async def add_payment_profile(session: AsyncSession, user_profile_id: UUID, proc
                               ) -> UUID:
     q = payment_profile.\
         insert().\
-        values(user_profile_id=str(user_profile_id),
+        values(user_profile_id=user_profile_id,
                processor_id=processor_id,
                processor_customer_profile_id=processor_customer_profile_id).\
         returning(payment_profile.c.payment_profile_id)
     rs = await session.execute(q)
-    return UUID(rs.scalar())
+    return rs.scalar()
 
 
 @operation
@@ -225,8 +221,8 @@ async def add_payment_method(session: AsyncSession, user_profile_id: UUID,
                              ) -> UUID:
     q = payment_method.\
         insert().\
-        values(user_profile_id=str(user_profile_id),
-               payment_profile_id=str(payment_profile_id),
+        values(user_profile_id=user_profile_id,
+               payment_profile_id=payment_profile_id,
                processor_payment_method_id=processor_payment_method_id,
                payment_method_type=payment_method_type,
                payment_method_family=payment_method_family,
@@ -236,7 +232,7 @@ async def add_payment_method(session: AsyncSession, user_profile_id: UUID,
                expires_after=expires_after).\
         returning(payment_method.c.payment_method_id)
     rs = await session.execute(q)
-    return UUID(rs.scalar())
+    return rs.scalar()
 
 
 @operation(single_result=True, record_cls=PaymentProfileRecord, default=None)
@@ -247,7 +243,7 @@ async def get_payment_profile(session: AsyncSession, user_profile_id: UUID,
                payment_profile.c.payment_profile_id,
                payment_profile.c.processor_id,
                payment_profile.c.processor_customer_profile_id).\
-        where(payment_profile.c.user_profile_id == str(user_profile_id)).\
+        where(payment_profile.c.user_profile_id == user_profile_id).\
         where(payment_profile.c.processor_id == processor_id)
     return await session.execute(q)
 
@@ -277,12 +273,12 @@ async def get_payment_methods(session: AsyncSession, user_profile_id: UUID,
                payment_method.c.expires_after).\
         select_from(payment_profile).\
         join(payment_method).\
-        where(payment_profile.c.user_profile_id == str(user_profile_id))
+        where(payment_profile.c.user_profile_id == user_profile_id)
 
     if payment_method_id is not None:
-        q = q.where(payment_method.c.payment_method_id == str(payment_method_id))
+        q = q.where(payment_method.c.payment_method_id == payment_method_id)
     if payment_profile_id is not None:
-        q = q.where(payment_profile.c.payment_profile_id == str(payment_profile_id))
+        q = q.where(payment_profile.c.payment_profile_id == payment_profile_id)
     if processor_id is not None:
         q = q.where(payment_profile.c.processor_id == processor_id)
     if status is not None:

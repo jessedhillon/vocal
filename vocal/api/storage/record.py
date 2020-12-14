@@ -116,15 +116,15 @@ class UserProfileRecord(BaseRecord):
 
     @classmethod
     def unmarshal_row(cls: 'UserProfileRecord', row: Row) -> 'UserProfileRecord':
-        return UserProfileRecord(user_profile_id=UUID(row[0]),
+        return UserProfileRecord(user_profile_id=row[0],
                                  display_name=row[1],
                                  created_at=row[2],
                                  name=row[3],
                                  role=UserRole(row[4]),
-                                 email_contact_method_id=UUID(row[5]) if row[5] else None,
+                                 email_contact_method_id=row[5],
                                  email_contact_method_verified=row[6],
                                  email_address=row[7],
-                                 phone_number_contact_method_id=UUID(row[8]) if row[8] else None,
+                                 phone_number_contact_method_id=row[8],
                                  phone_number_contact_method_verified=row[9],
                                  phone_number=row[10])
 
@@ -137,8 +137,8 @@ class PaymentProfileRecord(BaseRecord):
 
     @classmethod
     def unmarshal_row(cls, row: Row) -> 'PaymentProfileRecord':
-        return cls(user_profile_id=UUID(row[0]),
-                   payment_profile_id=UUID(row[1]),
+        return cls(user_profile_id=row[0],
+                   payment_profile_id=row[1],
                    processor_id=row[2],
                    processor_customer_profile_id=row[3])
 
@@ -160,11 +160,11 @@ class PaymentMethodRecord(BaseRecord):
 
     @classmethod
     def unmarshal_row(cls, row: Row) -> 'PaymentMethodRecord':
-        return cls(user_profile_id=UUID(row[0]),
-                   payment_profile_id=UUID(row[1]),
+        return cls(user_profile_id=row[0],
+                   payment_profile_id=row[1],
                    processor_id=row[2],
                    processor_customer_profile_id=row[3],
-                   payment_method_id=UUID(row[4]),
+                   payment_method_id=row[4],
                    processor_payment_method_id=row[5],
                    payment_method_type=PaymentMethodType(row[6]),
                    payment_method_family=row[7],
@@ -200,8 +200,8 @@ class EmailContactMethodRecord(ContactMethodRecord):
     def unmarshal_row(cls: 'EmailContactMethodRecord', row: Row) -> 'EmailContactMethodRecord':
         if row[3] is not ContactMethodType.Email:
             raise ValueError(f"wrong contact_method_type for email: {row[3]}")
-        return EmailContactMethodRecord(user_profile_id=UUID(row[0]),
-                                        contact_method_id=UUID(row[1]),
+        return EmailContactMethodRecord(user_profile_id=row[0],
+                                        contact_method_id=row[1],
                                         contact_method_type=ContactMethodType.Email,
                                         verified=row[2],
                                         email_address=row[4])
@@ -215,8 +215,8 @@ class PhoneContactMethodRecord(ContactMethodRecord):
     def unmarshal_row(cls: 'PhoneContactMethodRecord', row: Row) -> 'PhoneContactMethodRecord':
         if row[3] is not ContactMethodType.Phone:
             raise ValueError(f"wrong contact_method_type for phone number: {row[3]}")
-        return PhoneContactMethodRecord(user_profile_id=UUID(row[0]),
-                                        contact_method_id=UUID(row[1]),
+        return PhoneContactMethodRecord(user_profile_id=row[0],
+                                        contact_method_id=row[1],
                                         contact_method_type=ContactMethodType.Phone,
                                         verified=row[2],
                                         phone_number=row[4])
@@ -260,12 +260,12 @@ class SubscriptionPlanPaymentDemandRecord(BaseRecord):
                       row: Row,
                       ) -> 'SubscriptionPlanPaymentDemandRecord':
         return SubscriptionPlanPaymentDemandRecord(
-            subscription_plan_id=UUID(row[0]),
+            subscription_plan_id=row[0],
             status=SubscriptionPlanStatus(row[1]),
             rank=row[2],
             name=row[3],
             description=row[4],
-            payment_demand_id=UUID(row[5]),
+            payment_demand_id=row[5],
             demand_type=PaymentDemandType(row[6]),
             period=PaymentDemandPeriod(row[7]) if row[7] else None,
             amount=row[8],

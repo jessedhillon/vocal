@@ -26,7 +26,7 @@ depends_on = None
 utcnow = f.timezone('UTC', f.now())
 v4_uuid = f.gen_random_uuid()
 
-enum = partial(Enum, values_callable=lambda en: [e.value for e in en], create_type=False)
+Enum = partial(Enum, values_callable=lambda en: [e.value for e in en], create_type=False)
 subscription_plan_status = Enum('active', 'inactive', name='subscription_plan_status',
                                 create_type=False)
 payment_demand_type = Enum('periodic', 'immediate', 'pay-go', name='payment_demand_type',
@@ -35,7 +35,7 @@ payment_demand_period = Enum('daily', 'weekly', 'monthly', 'quarterly', 'annuall
                              name='payment_demand_period', create_type=False)
 payment_demand_status = Enum('active', 'inactive', name='payment_demand_status',
                              create_type=False)
-iso_4217_currency = enum(ISO4217Currency, name='iso_4217_currency')
+iso_4217_currency = Enum(ISO4217Currency, name='iso_4217_currency')
 
 
 def upgrade():

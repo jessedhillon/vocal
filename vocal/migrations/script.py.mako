@@ -23,7 +23,7 @@ depends_on = ${repr(depends_on)}
 
 utcnow = f.timezone('UTC', f.now())
 v4_uuid = f.gen_random_uuid()
-enum = partial(Enum, values_callable=lambda en: [e.value for e in en], create_type=False)
+Enum = partial(Enum, values_callable=lambda en: [e.value for e in en], create_type=False)
 
 
 def upgrade():
