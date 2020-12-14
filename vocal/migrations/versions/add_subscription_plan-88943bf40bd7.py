@@ -5,13 +5,15 @@ Revises: aa4168fa63a9
 Create Date: 2020-11-25 20:09:50.401529
 
 """
+from functools import partial
+
 from alembic import op
 from sqlalchemy import Column, ForeignKey, ForeignKeyConstraint, Boolean, DateTime, Integer,\
         Numeric, String, func as f
 from sqlalchemy.dialects.postgresql import ENUM as Enum, JSONB, UUID
 from sqlalchemy.sql import column, or_, null
 
-
+from vocal.constants import ISO4217Currency
 import vocal.util.sqlalchemy
 
 
@@ -24,6 +26,7 @@ depends_on = None
 utcnow = f.timezone('UTC', f.now())
 v4_uuid = f.gen_random_uuid()
 
+enum = partial(Enum, values_callable=lambda en: [e.value for e in en], create_type=False)
 subscription_plan_status = Enum('active', 'inactive', name='subscription_plan_status',
                                 create_type=False)
 payment_demand_type = Enum('periodic', 'immediate', 'pay-go', name='payment_demand_type',
@@ -32,6 +35,7 @@ payment_demand_period = Enum('daily', 'weekly', 'monthly', 'quarterly', 'annuall
                              name='payment_demand_period', create_type=False)
 payment_demand_status = Enum('active', 'inactive', name='payment_demand_status',
                              create_type=False)
+iso_4217_currency = enum(ISO4217Currency, name='iso_4217_currency')
 
 
 def upgrade():
@@ -39,6 +43,7 @@ def upgrade():
     payment_demand_type.create(op.get_bind())
     payment_demand_period.create(op.get_bind())
     payment_demand_status.create(op.get_bind())
+    iso_4217_currency.create(op.get_bind())
 
     op.create_table(
         'subscription_plan',
@@ -83,3 +88,4 @@ def downgrade():
     payment_demand_type.drop(op.get_bind())
     payment_demand_period.drop(op.get_bind())
     payment_demand_status.drop(op.get_bind())
+    iso_4217_currency.drop(op.get_bind())

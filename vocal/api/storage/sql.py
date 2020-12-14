@@ -1,26 +1,26 @@
-from sqlalchemy import Column, ForeignKey, ForeignKeyConstraint, Boolean, DateTime, Integer,\
-        Numeric, String, func as f, literal, MetaData
+from functools import partial
+from sqlalchemy import Column, ForeignKey, ForeignKeyConstraint, Boolean, DateTime,\
+        Integer, Numeric, String, func as f, literal, MetaData
 from sqlalchemy.dialects.postgresql import ENUM as Enum, JSONB, UUID
 from sqlalchemy.schema import Table
 
+from vocal.constants import ContactMethodType, UserRole, SubscriptionPlanStatus,\
+        PaymentDemandType, PaymentDemandPeriod, SubscriptionStatus, PaymentMethodType,\
+        PaymentMethodStatus, ISO4217Currency
+
 metadata = MetaData()
 
-contact_method_type = Enum('email', 'phone', 'address', name='contact_method_type',
-                           create_type=False)
-user_role = Enum('superuser', 'manager', 'creator', 'member', 'subscriber', name='user_role',
-                 create_type=False)
-subscription_plan_status = Enum('active', 'inactive', name='subscription_plan_status',
-                                create_type=False)
-payment_demand_type = Enum('periodic', 'immediate', 'pay-go', name='payment_demand_type',
-                           create_type=False)
-payment_demand_period = Enum('daily', 'weekly', 'monthly', 'quarterly', 'annually',
-                             name='payment_demand_period', create_type=False)
-subscription_status = Enum('trial', 'current', 'paused', 'expired', 'cancelled',
-                           name='subscription_status', create_type=False)
-payment_method_type = Enum('credit_card', 'cryptocurrency', 'eft', 'manual',
-                           name='payment_method_type', create_type=False)
-payment_method_status = Enum('current', 'expired', 'invalid',
-                             name='payment_method_status', create_type=False)
+enum = partial(Enum, values_callable=lambda en: [e.value for e in en])
+contact_method_type = enum(ContactMethodType, name='contact_method_type')
+user_role = enum(UserRole, name='user_role')
+subscription_plan_status = enum(SubscriptionPlanStatus, name='subscription_plan_status')
+payment_demand_type = enum(PaymentDemandType, name='payment_demand_type')
+payment_demand_period = enum(PaymentDemandPeriod, name='payment_demand_period')
+subscription_status = enum(SubscriptionStatus, name='subscription_status')
+payment_method_type = enum(PaymentMethodType, name='payment_method_type')
+payment_method_status = enum(PaymentMethodStatus, name='payment_method_status')
+iso_4217_currency = enum(ISO4217Currency, name='iso_4217_currency')
+
 utcnow = f.timezone('UTC', f.now())
 v4_uuid = f.gen_random_uuid()
 
@@ -100,7 +100,7 @@ payment_demand = Table(
     Column('payment_demand_id', UUID, primary_key=True, server_default=f.gen_random_uuid()),
     Column('demand_type', payment_demand_type, nullable=False),
     Column('period', payment_demand_period, nullable=False),
-    Column('iso_currency', String(3)),
+    Column('iso_currency', iso_4217_currency),
     Column('non_iso_currency', String),
     Column('amount', Numeric(20, 6), nullable=False))
 
@@ -168,6 +168,8 @@ payment_transaction = Table(
     Column('success', Boolean, nullable=False),
     Column('processor_transaction_id', String),
     Column('amount', Numeric(20, 6), nullable=False),
+    Column('iso_currency', iso_4217_currency),
+    Column('non_iso_currency', String),
     Column('processor_response_raw', JSONB),
     ForeignKeyConstraint(['user_profile_id', 'payment_profile_id'],
                          ['payment_profile.user_profile_id',

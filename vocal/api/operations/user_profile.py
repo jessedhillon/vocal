@@ -39,10 +39,10 @@ async def get_user_profile(session: AsyncSession, user_profile_id: UUID=None,
         select_from(user_profile).\
         outerjoin(email,
                   (user_profile.c.user_profile_id == email.c.user_profile_id) &
-                  (email.c.contact_method_type == ContactMethodType.Email.value)).\
+                  (email.c.contact_method_type == ContactMethodType.Email)).\
         outerjoin(phone,
                   (user_profile.c.user_profile_id == phone.c.user_profile_id) &
-                  (phone.c.contact_method_type == ContactMethodType.Phone.value)).\
+                  (phone.c.contact_method_type == ContactMethodType.Phone)).\
         outerjoin(email_contact_method,
                   (email.c.user_profile_id == email_contact_method.c.user_profile_id) &
                   (email.c.contact_method_id == email_contact_method.c.contact_method_id)).\
@@ -72,7 +72,7 @@ async def create_user_profile(session: AsyncSession, display_name: str, name: st
         insert().
         values(name=name,
                display_name=display_name,
-               role=role.value).
+               role=role).
         returning(user_profile.c.user_profile_id))
     profile_id = r.scalar()
 
@@ -110,7 +110,7 @@ async def add_contact_method(session: AsyncSession, user_profile_id: UUID,
             contact_method.
             insert().
             values(user_profile_id=user_profile_id,
-                   contact_method_type=ContactMethodType.Email.value,
+                   contact_method_type=ContactMethodType.Email,
                    verified=False).
             returning(contact_method.c.contact_method_id))
         email_id = r.scalar()
@@ -136,7 +136,7 @@ async def add_contact_method(session: AsyncSession, user_profile_id: UUID,
                 contact_method.
                 insert().
                 values(user_profile_id=user_profile_id,
-                       contact_method_type=ContactMethodType.Phone.value,
+                       contact_method_type=ContactMethodType.Phone,
                        verified=False).
                 returning(contact_method.c.contact_method_id))
         pn_id = r.scalar()
@@ -169,10 +169,10 @@ async def get_contact_method(session: AsyncSession, contact_method_id: UUID,
         select_from(contact_method).\
         outerjoin(email_contact_method,
                   (contact_method.c.user_profile_id == email_contact_method.c.user_profile_id) &
-                  (contact_method.c.contact_method_type == ContactMethodType.Email.value)).\
+                  (contact_method.c.contact_method_type == ContactMethodType.Email)).\
         outerjoin(phone_contact_method,
                   (contact_method.c.user_profile_id == phone_contact_method.c.user_profile_id) &
-                  (contact_method.c.contact_method_type == ContactMethodType.Phone.value)).\
+                  (contact_method.c.contact_method_type == ContactMethodType.Phone)).\
         where(contact_method.c.contact_method_id == contact_method_id)
 
     if user_profile_id is None:
@@ -228,11 +228,11 @@ async def add_payment_method(session: AsyncSession, user_profile_id: UUID,
         values(user_profile_id=str(user_profile_id),
                payment_profile_id=str(payment_profile_id),
                processor_payment_method_id=processor_payment_method_id,
-               payment_method_type=payment_method_type.value,
+               payment_method_type=payment_method_type,
                payment_method_family=payment_method_family,
                display_name=display_name,
                safe_account_number_fragment=safe_account_number_fragment,
-               status=PaymentMethodStatus.Current.value,
+               status=PaymentMethodStatus.Current,
                expires_after=expires_after).\
         returning(payment_method.c.payment_method_id)
     rs = await session.execute(q)
@@ -286,6 +286,6 @@ async def get_payment_methods(session: AsyncSession, user_profile_id: UUID,
     if processor_id is not None:
         q = q.where(payment_profile.c.processor_id == processor_id)
     if status is not None:
-        q = q.where(payment_method.c.status == status.value)
+        q = q.where(payment_method.c.status == status)
 
     return await session.execute(q)

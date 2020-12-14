@@ -5,6 +5,8 @@ Revises: ${down_revision | comma,n}
 Create Date: ${create_date}
 
 """
+from functools import partial
+
 from alembic import op
 from sqlalchemy import Column, ForeignKey, ForeignKeyConstraint, Boolean, DateTime, Integer, String, func as f
 from sqlalchemy.dialects.postgresql import ENUM as Enum, JSONB, UUID
@@ -21,6 +23,7 @@ depends_on = ${repr(depends_on)}
 
 utcnow = f.timezone('UTC', f.now())
 v4_uuid = f.gen_random_uuid()
+enum = partial(Enum, values_callable=lambda en: [e.value for e in en], create_type=False)
 
 
 def upgrade():

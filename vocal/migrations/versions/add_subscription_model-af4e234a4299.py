@@ -5,12 +5,14 @@ Revises: 88943bf40bd7
 Create Date: 2020-12-07 07:30:50.509741
 
 """
+from functools import partial
+
 from alembic import op
 from sqlalchemy import Column, ForeignKey, ForeignKeyConstraint, Boolean, DateTime, Integer,\
         Numeric, String, func as f, literal
 from sqlalchemy.dialects.postgresql import ENUM as Enum, JSONB, UUID
 
-
+from vocal.constants import ISO4217Currency
 import vocal.util.sqlalchemy
 
 
@@ -23,12 +25,14 @@ depends_on = None
 utcnow = f.timezone('UTC', f.now())
 v4_uuid = f.gen_random_uuid()
 
+enum = partial(Enum, values_callable=lambda en: [e.value for e in en], create_type=False)
 subscription_status = Enum('current', 'paused', 'expired', 'cancelled',
                            name='subscription_status', create_type=False)
 payment_method_type = Enum('credit_card', 'cryptocurrency', 'eft', 'manual',
                            name='payment_method_type', create_type=False)
 payment_method_status = Enum('current', 'expired', 'invalid',
                              name='payment_method_status', create_type=False)
+iso_4217_currency = enum(ISO4217Currency, name='iso_4217_currency')
 
 
 def upgrade():
@@ -74,6 +78,8 @@ def upgrade():
         Column('success', Boolean, nullable=False),
         Column('processor_transaction_id', String),
         Column('amount', Numeric(20, 6), nullable=False),
+        Column('iso_currency', iso_4217_currency),
+        Column('non_iso_currency', String),
         Column('processor_response_raw', JSONB),
         ForeignKeyConstraint(['user_profile_id', 'payment_profile_id'],
                              ['payment_profile.user_profile_id',
@@ -166,6 +172,7 @@ def downgrade():
     op.drop_table('payment_transaction')
     op.drop_table('payment_method')
     op.drop_table('payment_profile')
+    iso_4217_currency.create(op.get_bind())
 
     subscription_status.drop(op.get_bind())
     payment_method_type.drop(op.get_bind())

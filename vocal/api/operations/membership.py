@@ -33,7 +33,7 @@ async def create_subscription_plan(session: AsyncSession, description: str,
     r = await session.execute(
         subscription_plan.
         insert().
-        values(status=SubscriptionPlanStatus.Active.value,
+        values(status=SubscriptionPlanStatus.Active,
                rank=rank,
                name=name,
                description=description).
@@ -61,12 +61,12 @@ async def add_periodic_payment_demand(session: AsyncSession, subscription_plan_i
 
     values = {
         'subscription_plan_id': subscription_plan_id,
-        'period': period.value,
+        'period': period,
         'amount': amount,
-        'demand_type': PaymentDemandType.Periodic.value,
+        'demand_type': PaymentDemandType.Periodic,
     }
     if iso_currency is not None:
-        values['iso_currency'] = ISO4217Currency(iso_currency).value
+        values['iso_currency'] = ISO4217Currency(iso_currency)
     elif non_iso_currency is not None:
         values['non_iso_currency'] = non_iso_currency.upper()
 
@@ -89,10 +89,10 @@ async def add_immediate_payment_demand(session: AsyncSession, subscription_plan_
     values = {
         'subscription_plan_id': subscription_plan_id,
         'amount': amount,
-        'demand_type': PaymentDemandType.Immediate.value,
+        'demand_type': PaymentDemandType.Immediate,
     }
     if iso_currency is not None:
-        values['iso_currency'] = ISO4217Currency(iso_currency).value
+        values['iso_currency'] = ISO4217Currency(iso_currency)
     elif non_iso_currency is not None:
         values['non_iso_currency'] = non_iso_currency.upper()
 
@@ -118,13 +118,13 @@ async def get_subscription_plans(session: AsyncSession) -> Recordset:
         select_from(subscription_plan).\
         join(payment_demand).\
         order_by(subscription_plan.c.subscription_plan_id,
-                 (subscription_plan.c.status == SubscriptionPlanStatus.Active.value).desc(),
-                 (payment_demand.c.demand_type == PaymentDemandType.Periodic.value).desc(),
-                 (payment_demand.c.period == PaymentDemandPeriod.Daily.value).desc(),
-                 (payment_demand.c.period == PaymentDemandPeriod.Weekly.value).desc(),
-                 (payment_demand.c.period == PaymentDemandPeriod.Monthly.value).desc(),
-                 (payment_demand.c.period == PaymentDemandPeriod.Quarterly.value).desc(),
-                 (payment_demand.c.period == PaymentDemandPeriod.Annually.value).desc())
+                 (subscription_plan.c.status == SubscriptionPlanStatus.Active).desc(),
+                 (payment_demand.c.demand_type == PaymentDemandType.Periodic).desc(),
+                 (payment_demand.c.period == PaymentDemandPeriod.Daily).desc(),
+                 (payment_demand.c.period == PaymentDemandPeriod.Weekly).desc(),
+                 (payment_demand.c.period == PaymentDemandPeriod.Monthly).desc(),
+                 (payment_demand.c.period == PaymentDemandPeriod.Quarterly).desc(),
+                 (payment_demand.c.period == PaymentDemandPeriod.Annually).desc())
     return await session.execute(q)
 
 
@@ -149,13 +149,13 @@ async def get_subscription_plan(session: AsyncSession, subscription_plan_id: UUI
         select_from(subscription_plan).\
         join(payment_demand).\
         order_by(subscription_plan.c.subscription_plan_id,
-                 (subscription_plan.c.status == SubscriptionPlanStatus.Active.value).desc(),
-                 (payment_demand.c.demand_type == PaymentDemandType.Periodic.value).desc(),
-                 (payment_demand.c.period == PaymentDemandPeriod.Daily.value).desc(),
-                 (payment_demand.c.period == PaymentDemandPeriod.Weekly.value).desc(),
-                 (payment_demand.c.period == PaymentDemandPeriod.Monthly.value).desc(),
-                 (payment_demand.c.period == PaymentDemandPeriod.Quarterly.value).desc(),
-                 (payment_demand.c.period == PaymentDemandPeriod.Annually.value).desc())
+                 (subscription_plan.c.status == SubscriptionPlanStatus.Active).desc(),
+                 (payment_demand.c.demand_type == PaymentDemandType.Periodic).desc(),
+                 (payment_demand.c.period == PaymentDemandPeriod.Daily).desc(),
+                 (payment_demand.c.period == PaymentDemandPeriod.Weekly).desc(),
+                 (payment_demand.c.period == PaymentDemandPeriod.Monthly).desc(),
+                 (payment_demand.c.period == PaymentDemandPeriod.Quarterly).desc(),
+                 (payment_demand.c.period == PaymentDemandPeriod.Annually).desc())
 
     if subscription_plan_id is not None:
         q = q.where(subscription_plan.c.subscription_plan_id == str(subscription_plan_id))
@@ -197,7 +197,7 @@ async def create_subscription(session: AsyncSession, user_profile_id: UUID,
                payment_demand_id=str(payment_demand_id),
                payment_profile_id=str(payment_profile_id),
                payment_method_id=str(payment_method_id),
-               status=SubscriptionStatus.Current.value,
+               status=SubscriptionStatus.Current,
                processor_charge_id=processor_charge_id,
                current_status_until=good_until).\
         returning(

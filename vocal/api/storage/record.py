@@ -198,7 +198,7 @@ class EmailContactMethodRecord(ContactMethodRecord):
 
     @classmethod
     def unmarshal_row(cls: 'EmailContactMethodRecord', row: Row) -> 'EmailContactMethodRecord':
-        if row[3] is not ContactMethodType.Email.value:
+        if row[3] is not ContactMethodType.Email:
             raise ValueError(f"wrong contact_method_type for email: {row[3]}")
         return EmailContactMethodRecord(user_profile_id=UUID(row[0]),
                                         contact_method_id=UUID(row[1]),
@@ -213,7 +213,7 @@ class PhoneContactMethodRecord(ContactMethodRecord):
 
     @classmethod
     def unmarshal_row(cls: 'PhoneContactMethodRecord', row: Row) -> 'PhoneContactMethodRecord':
-        if row[3] is not ContactMethodType.Phone.value:
+        if row[3] is not ContactMethodType.Phone:
             raise ValueError(f"wrong contact_method_type for phone number: {row[3]}")
         return PhoneContactMethodRecord(user_profile_id=UUID(row[0]),
                                         contact_method_id=UUID(row[1]),
