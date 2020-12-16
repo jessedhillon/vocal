@@ -418,6 +418,8 @@ Subscription:
     subscriptionId:
       type: string
       format: uuid
+    subscriptionPlanId:
+      type: string
     processorSubscriptionId:
       type: string
     plan:

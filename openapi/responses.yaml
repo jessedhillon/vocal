@@ -115,7 +115,6 @@ UpdateSubscriptionPlanResponse:
   description: Update `SubscriptionPlan` successful response
   content:
     application/json:
-    application/json:
       schema:
         allOf:
           - $ref: './schemas.yaml#/PagedResultSet'
@@ -128,6 +127,14 @@ GetSubscriptionPlanMembershipResponse:
   description: Successful request for `SubscriptionPlan` roster
   content:
     application/json:
+      schema:
+        allOf:
+          - $ref: './schemas.yaml#/PagedResultSet'
+          - properties:
+              results:
+                type: array
+                items:
+                  $ref: './schemas.yaml#/SubscriberProfile'
 GetFeedResponse:
   description: "`Feed` successful response"
   content:

@@ -353,6 +353,30 @@ paths:
           $ref: '#/components/responses/ErrorResponse'
         404:
           $ref: '#/components/responses/ErrorResponse'
+  /plans/{subscriptionPlanId}/subscribe:
+    post:
+      tags:
+        - commerce
+      summary: Become a member following a `SubscriptionPlan`
+      operationId: createSubscription
+      security:
+        - sessionCookie:
+          - plan.update
+      parameters:
+        - in: path
+          name: subscriptionPlanId
+          schema:
+            type: string
+          required: true
+      requestBody:
+        $ref: '#/components/requestBodies/CreateSubscriptionRequest'
+      responses:
+        200:
+          $ref: '#/components/responses/BasicResponse'
+        400:
+          $ref: '#/components/responses/ErrorResponse'
+        404:
+          $ref: '#/components/responses/ErrorResponse'
   /feeds:
     get:
       tags:
