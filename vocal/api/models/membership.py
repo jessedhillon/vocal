@@ -8,6 +8,7 @@ from vocal.constants import ISO4217Currency, PaymentDemandType, PaymentDemandPer
         SubscriptionStatus, SubscriptionPlanStatus
 from vocal.api.storage.record import Recordset, SubscriptionPlanPaymentDemandRecord,\
         SubscriptionRecord
+from vocal.api.models.user_profile import SubscriberUserProfile
 
 from .base import ViewModel, model_collection, define_view
 
@@ -61,7 +62,7 @@ class SubscriptionPlan(ViewModel):
                     'subscription_plan_id': rec.subscription_plan_id,
                     'status': rec.status,
                     'rank': rec.rank,
-                    'name': rec.name,
+                    'name': rec.subscription_plan_name,
                     'description': rec.description,
                     'payment_demands': model_collection([]),
                 })

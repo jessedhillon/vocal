@@ -128,6 +128,32 @@ class UserProfileRecord(BaseRecord):
                                  phone_number_contact_method_verified=row[9],
                                  phone_number=row[10])
 
+
+@dataclass(frozen=True)
+class SubscriberUserProfileRecord(UserProfileRecord):
+    subscription_plan_id: UUID
+    rank: Optional[int]
+    subscription_plan_name: Optional[str]
+    description: str
+    processor_id: str
+    processor_customer_profile_id: str
+    payment_demand_id: UUID
+    demand_type: PaymentDemandType
+    period: Optional[PaymentDemandPeriod]
+    iso_currency: Optional[ISO4217Currency]
+    non_iso_currency: Optional[str]
+    amount: Decimal
+    status: SubscriptionStatus
+    processor_charge_id: str
+    started_at: datetime
+    current_status_at: datetime
+    current_status_until: Optional[datetime]
+
+    @classmethod
+    def unmarshal_row(cls, row: Row) -> 'SubscriberUserProfileRecord':
+        return cls(*row)
+
+
 @dataclass(frozen=True)
 class PaymentProfileRecord(BaseRecord):
     user_profile_id: UUID
@@ -227,7 +253,7 @@ class SubscriptionPlanPaymentDemandRecord(BaseRecord):
     subscription_plan_id: UUID
     status: SubscriptionPlanStatus
     rank: Optional[int]
-    name: Optional[str]
+    subscription_plan_name: Optional[str]
     description: str
     payment_demand_id: UUID
     demand_type: PaymentDemandType
@@ -263,7 +289,7 @@ class SubscriptionPlanPaymentDemandRecord(BaseRecord):
             subscription_plan_id=row[0],
             status=SubscriptionPlanStatus(row[1]),
             rank=row[2],
-            name=row[3],
+            subscription_plan_name=row[3],
             description=row[4],
             payment_demand_id=row[5],
             demand_type=PaymentDemandType(row[6]),

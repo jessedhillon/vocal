@@ -8,11 +8,13 @@ from sqlalchemy.engine.result import Result
 from sqlalchemy.ext.asyncio.session import AsyncSession
 from sqlalchemy.sql.expression import alias, exists, false, join, literal, select, true
 
-from vocal.constants import ContactMethodType, PaymentMethodType, PaymentMethodStatus, UserRole
+from vocal.constants import ContactMethodType, PaymentMethodType, PaymentMethodStatus, UserRole,\
+        SubscriptionStatus
 from vocal.api.storage.record import UserProfileRecord, ContactMethodRecord,\
-        PaymentMethodRecord, PaymentProfileRecord, Recordset
+        PaymentMethodRecord, PaymentProfileRecord, Recordset, SubscriberUserProfileRecord
 from vocal.api.storage.sql import user_profile, user_auth, contact_method, email_contact_method,\
-        phone_contact_method, payment_profile, payment_method
+        phone_contact_method, payment_profile, payment_method, subscription, subscription_plan,\
+        payment_demand
 from vocal.api.util import operation
 
 
@@ -283,5 +285,71 @@ async def get_payment_methods(session: AsyncSession, user_profile_id: UUID,
         q = q.where(payment_profile.c.processor_id == processor_id)
     if status is not None:
         q = q.where(payment_method.c.status == status)
+
+    return await session.execute(q)
+
+
+@operation(SubscriberUserProfileRecord)
+async def get_subscriber_profiles(session: AsyncSession, subscription_plan_id: UUID,
+                                  status: Optional[SubscriptionStatus]=SubscriptionStatus.Current
+                                  ) -> Result:
+    email = contact_method.alias()
+    phone = contact_method.alias()
+    q = select(user_profile.c.user_profile_id,
+               user_profile.c.display_name,
+               user_profile.c.created_at,
+               user_profile.c.name,
+               user_profile.c.role,
+               email.c.contact_method_id,
+               email.c.verified,
+               email_contact_method.c.email_address,
+               phone.c.contact_method_id,
+               phone.c.verified,
+               phone_contact_method.c.phone_number,
+               subscription_plan.c.subscription_plan_id,
+               subscription_plan.c.rank,
+               subscription_plan.c.name,
+               subscription_plan.c.description,
+               payment_profile.c.processor_id,
+               payment_profile.c.processor_customer_profile_id,
+               payment_demand.c.payment_demand_id,
+               payment_demand.c.demand_type,
+               payment_demand.c.period,
+               payment_demand.c.iso_currency,
+               payment_demand.c.non_iso_currency,
+               payment_demand.c.amount,
+               subscription.c.status,
+               subscription.c.processor_charge_id,
+               subscription.c.started_at,
+               subscription.c.current_status_at,
+               subscription.c.current_status_until,
+               ).\
+        select_from(user_profile).\
+        outerjoin(email,
+                  (user_profile.c.user_profile_id == email.c.user_profile_id) &
+                  (email.c.contact_method_type == ContactMethodType.Email)).\
+        outerjoin(phone,
+                  (user_profile.c.user_profile_id == phone.c.user_profile_id) &
+                  (phone.c.contact_method_type == ContactMethodType.Phone)).\
+        outerjoin(email_contact_method,
+                  (email.c.user_profile_id == email_contact_method.c.user_profile_id) &
+                  (email.c.contact_method_id == email_contact_method.c.contact_method_id)).\
+        outerjoin(phone_contact_method,
+                  (phone.c.user_profile_id == phone_contact_method.c.user_profile_id) &
+                  (phone.c.contact_method_id == phone_contact_method.c.contact_method_id)).\
+        join(subscription,
+             (subscription.c.user_profile_id == user_profile.c.user_profile_id)).\
+        join(subscription_plan,
+             (subscription.c.subscription_plan_id == subscription_plan.c.subscription_plan_id)).\
+        join(payment_demand,
+             (subscription.c.subscription_plan_id == payment_demand.c.subscription_plan_id) &
+             (subscription.c.payment_demand_id == payment_demand.c.payment_demand_id)).\
+        join(payment_profile,
+             (subscription.c.user_profile_id == payment_profile.c.user_profile_id) &
+             (subscription.c.payment_profile_id == payment_profile.c.payment_profile_id)).\
+        where(subscription.c.subscription_plan_id == subscription_plan_id)
+
+    if status is not None:
+        q = q.where(subscription.c.status == status)
 
     return await session.execute(q)

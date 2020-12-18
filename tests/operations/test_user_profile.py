@@ -1,9 +1,13 @@
 import json
+from datetime import datetime, timedelta
+from decimal import Decimal
 
 import pytest
 
 import vocal.api.operations as op
-from vocal.constants import UserRole
+from vocal.constants import UserRole, PaymentDemandPeriod, PaymentDemandType, PaymentMethodType
+from vocal.api.models.membership import SubscriptionPlan
+from vocal.api.models.user_profile import SubscriberUserProfile
 
 from sqlalchemy.exc import IntegrityError
 
@@ -165,3 +169,83 @@ class UserProfileOperationsTestCase(DatabaseTestCase):
                         processor_id='com.example',
                         processor_customer_profile_id='foo-bar').\
                     execute(ss)
+
+
+    async def test_get_subscriber_profiles(self):
+        async with op.session(self.appctx) as session:
+            plan_id = await op.membership.create_subscription_plan(
+                rank=1,
+                name="Basic member",
+                description="- Ad-free podcast episodes\n"
+                            "- Access to episodes one week before non-subscribers\n"
+                            "- Monthly members-only episode\n",
+                payment_demands=(
+                    (PaymentDemandType.Periodic, PaymentDemandPeriod.Quarterly,
+                     Decimal('25.0'), 'USD'),
+                    (PaymentDemandType.Periodic, PaymentDemandPeriod.Annually,
+                     Decimal('90.0'), 'USD'),
+                    (PaymentDemandType.Periodic, PaymentDemandPeriod.Monthly,
+                     Decimal('10.0'), 'USD'),
+                    (PaymentDemandType.Immediate, Decimal('250.0'), 'USD'))).\
+                execute(session)
+
+            plans = await op.membership.\
+                get_subscription_plans().\
+                unmarshal_with(SubscriptionPlan).\
+                execute(session)
+
+            profile_ids = await op.execute(self.appctx, [
+                op.user_profile.create_user_profile(
+                    'Jesse',
+                    'Jesse Dhillon',
+                    '123foobar^#@',
+                    UserRole.Subscriber,
+                    'jesse@dhillon.com',
+                    '+14155551234'),
+                op.user_profile.create_user_profile(
+                    'Alice G.',
+                    'Alice Goodwell',
+                    'password123!',
+                    UserRole.Subscriber,
+                    'alice@example.com'),
+            ])
+
+            for i, profile_id in enumerate(profile_ids):
+                pd = plans[0].payment_demands[i%4]
+                pp_id = await op.user_profile.\
+                    add_payment_profile(
+                        user_profile_id=profile_id,
+                        processor_id='com.example',
+                        processor_customer_profile_id=f'customer_{i}').\
+                    execute(session)
+                pm_id = await op.user_profile.\
+                    add_payment_method(
+                        user_profile_id=profile_id,
+                        payment_profile_id=pp_id,
+                        processor_payment_method_id=f'card_{i}',
+                        payment_method_type=PaymentMethodType.CreditCard,
+                        payment_method_family='test',
+                        display_name='TEST 4242',
+                        safe_account_number_fragment='4242',
+                        expires_after=datetime.today() + timedelta(days=365)).\
+                    execute(session)
+                await op.membership.\
+                    create_subscription(
+                        user_profile_id=profile_id,
+                        subscription_plan_id=plan_id,
+                        payment_demand_id=pd.payment_demand_id,
+                        payment_profile_id=pp_id,
+                        payment_method_id=pm_id,
+                        processor_charge_id=f'charge_{i}').\
+                    execute(session)
+
+            subs = await op.user_profile.\
+                    get_subscriber_profiles(subscription_plan_id=plans[0].subscription_plan_id).\
+                    unmarshal_with(SubscriberUserProfile).\
+                    execute(session)
+
+        assert len(subs) == 2
+        assert subs[0].subscription.plan.payment_demands[0].period is\
+                PaymentDemandPeriod.Monthly
+        assert subs[1].subscription.plan.payment_demands[0].period is\
+                PaymentDemandPeriod.Quarterly
