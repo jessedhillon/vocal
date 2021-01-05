@@ -23,7 +23,7 @@ class CreateExtensionOp(MigrateOperation):
 @Operations.implementation_for(CreateExtensionOp)
 def create_extension(operations, op):
     checkfirst = "IF NOT EXISTS " if op.checkfirst else ""
-    stmt = "CREATE EXTENSION {}{}".format(checkfirst, op.extension_name)
+    stmt = 'CREATE EXTENSION {}"{}"'.format(checkfirst, op.extension_name)
 
     if op.schema or op.version:
         w = []
@@ -53,7 +53,7 @@ class DropExtensionOp(MigrateOperation):
 
 @Operations.implementation_for(DropExtensionOp)
 def drop_extension(operations, op):
-    stmt = f"DROP EXTENSION {op.extension_name}"
+    stmt = f'DROP EXTENSION "{op.extension_name}"'
     if op.cascade:
         operations.execute(stmt + " CASCADE")
     operations.execute(stmt)

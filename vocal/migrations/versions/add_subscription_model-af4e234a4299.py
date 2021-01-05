@@ -173,7 +173,7 @@ def downgrade():
     op.drop_table('payment_transaction')
     op.drop_table('payment_method')
     op.drop_table('payment_profile')
-    iso_4217_currency.create(op.get_bind())
+    iso_4217_currency.drop(op.get_bind())
 
     subscription_status.drop(op.get_bind())
     payment_method_type.drop(op.get_bind())
