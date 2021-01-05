@@ -2,7 +2,7 @@ import calendar
 from datetime import date, datetime, timedelta
 
 
-def add_months(d: datetime, months: int) -> datetime:
+def add_calendar_months(d: datetime, months: int) -> datetime:
     if (d.month + months) > 12:
         next_month = (d.month + months) % 12
         years = (d.month + months) // 12

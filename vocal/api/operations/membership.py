@@ -1,4 +1,3 @@
-import calendar
 from datetime import datetime, timedelta
 from decimal import Decimal
 from typing import Union, Optional
@@ -183,11 +182,11 @@ async def create_subscription(session: AsyncSession, user_profile_id: UUID,
     elif pd.period is PaymentDemandPeriod.Weekly:
         good_until = today + timedelta(days=7)
     elif pd.period is PaymentDemandPeriod.Monthly:
-        good_until = dates.add_months(today, 1)
+        good_until = dates.add_calendar_months(today, 1)
     elif pd.period is PaymentDemandPeriod.Quarterly:
-        good_until = dates.add_months(today, 3)
+        good_until = dates.add_calendar_months(today, 3)
     elif pd.period is PaymentDemandPeriod.Annually:
-        good_until = dates.add_months(today, 12)
+        good_until = dates.add_calendar_months(today, 12)
 
     return await session.execute(
         subscription.\
