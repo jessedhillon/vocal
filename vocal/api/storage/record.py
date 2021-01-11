@@ -94,7 +94,7 @@ class BaseRecord(object):
 
     @classmethod
     def unmarshal_row(cls, row: Row) -> 'BaseRecord':
-        raise NotImplementedError()
+        return cls(*row)
 
     def marshal_dict(self) -> dict:
         return asdict(self)
@@ -311,9 +311,6 @@ class SubscriptionRecord(BaseRecord):
     started_at: datetime
     current_status_until: Optional[datetime]
 
-    @classmethod
-    def unmarshal_row(cls, row: Row) -> 'SubscriptionRecord':
-        return cls(*row)
 
 @dataclass(frozen=True)
 class ArticleRecord(BaseRecord):

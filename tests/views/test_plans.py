@@ -9,6 +9,7 @@ from vocal.payments.models import PaymentCredential
 
 from .. import AppTestCase
 
+
 class PlansViewTestCase(AppTestCase):
     async def test_get_plans(self):
         async with op.session(self.appctx) as ss:
