@@ -4,7 +4,7 @@ from functools import partial, wraps
 import sqlalchemy.ext.asyncio
 
 from vocal.api.util import operation
-from . import user_profile, membership, authn
+from . import user_profile, membership, authn, content
 
 
 async def execute(appctx, operations):

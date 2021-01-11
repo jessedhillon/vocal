@@ -67,6 +67,12 @@ class PaymentMethodStatus(Enum):
     Expired = 'expired'
 
 
+class ArticleStatus(Enum):
+    Draft = 'draft'
+    Published = 'published'
+    Deleted = 'deleted'
+
+
 class ISO4217Currency(Enum):
     # taken from https://stripe.com/docs/currencies
     AED = 'AED'

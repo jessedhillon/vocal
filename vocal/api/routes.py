@@ -1,6 +1,6 @@
 from aiohttp.web import RouteTableDef, RouteDef
 
-from .views import users, authn, plans
+from .views import users, authn, plans, content
 
 
 async def configure(appctx):
@@ -23,4 +23,7 @@ async def configure(appctx):
         RouteDef('POST', '/plans', plans.create_subscription_plan, {}),
         RouteDef('POST', '/plans/{subscription_plan_id}/subscribe',
                  plans.create_subscription, {}),
+
+        # content
+        RouteDef('GET', '/articles/{article_id}', content.get_article, {}),
     ])

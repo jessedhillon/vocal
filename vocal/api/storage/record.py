@@ -13,7 +13,7 @@ from sqlalchemy.engine.row import Row
 
 from vocal.constants import ContactMethodType, ISO4217Currency, SubscriptionPlanStatus,\
         PaymentDemandType, PaymentDemandPeriod, PaymentMethodStatus, PaymentMethodType, UserRole,\
-        SubscriptionStatus
+        SubscriptionStatus, ArticleStatus
 
 
 class Recordset(Sequence):
@@ -314,3 +314,18 @@ class SubscriptionRecord(BaseRecord):
     @classmethod
     def unmarshal_row(cls, row: Row) -> 'SubscriptionRecord':
         return cls(*row)
+
+@dataclass(frozen=True)
+class ArticleRecord(BaseRecord):
+    article_id: UUID
+    version_key: UUID
+    status: ArticleStatus
+    title: Optional[str]
+    excerpt: dict
+    document: dict
+    text: str
+    created_at: datetime
+    author_profile_id: UUID
+    author_display_name: str
+    author_created_at: datetime
+    author_role: UserRole

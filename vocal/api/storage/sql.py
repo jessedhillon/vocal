@@ -6,13 +6,14 @@ from sqlalchemy.schema import Table
 
 from vocal.constants import ContactMethodType, UserRole, SubscriptionPlanStatus,\
         PaymentDemandType, PaymentDemandPeriod, SubscriptionStatus, PaymentMethodType,\
-        PaymentMethodStatus, ISO4217Currency
+        PaymentMethodStatus, ISO4217Currency, ArticleStatus
 
 metadata = MetaData()
 
 Enum = partial(Enum, values_callable=lambda en: [e.value for e in en])
 UUID = partial(UUID, as_uuid=True)
 
+article_status = Enum(ArticleStatus, name='article_status')
 contact_method_type = Enum(ContactMethodType, name='contact_method_type')
 user_role = Enum(UserRole, name='user_role')
 subscription_plan_status = Enum(SubscriptionPlanStatus, name='subscription_plan_status')
@@ -25,6 +26,7 @@ iso_4217_currency = Enum(ISO4217Currency, name='iso_4217_currency')
 
 utcnow = f.timezone('UTC', f.now())
 v4_uuid = f.gen_random_uuid()
+v1_uuid = f.uuid_generate_v1mc()
 
 user_profile = Table(
     'user_profile',
@@ -194,3 +196,17 @@ subscription_payment = Table(
                          ['subscription.user_profile_id',
                           'subscription.subscription_plan_id',
                           'subscription.payment_demand_id']))
+
+article = Table(
+    'article',
+    metadata,
+    Column('article_id', UUID(), ForeignKey('article.article_id'),
+           primary_key=True, server_default=v4_uuid),
+    Column('version_key', UUID(), primary_key=True, server_default=v1_uuid),
+    Column('author_id', UUID(), ForeignKey('user_profile.user_profile_id')),
+    Column('status', article_status, nullable=False),
+    Column('title', String),
+    Column('excerpt', JSONB, nullable=False),
+    Column('document', JSONB, nullable=False),
+    Column('text', String, nullable=False),
+    Column('created_at', DateTime, nullable=False, server_default=utcnow))
